@@ -161,6 +161,12 @@ body {
   background: none;
   transition: all 0.2s;
   font-family: 'Inter', sans-serif;
+  text-decoration: none;
+  display: block;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(201,168,76,0.2);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .role-tab.active {
@@ -908,8 +914,8 @@ body {
     <div class="login-tagline">Gestione presenze multi-sede</div>
 
     <div class="role-tabs">
-      <button class="role-tab active" onclick="setRole('dipendente')">👤 Dipendente</button>
-      <button class="role-tab" onclick="setRole('admin')">⚙️ Amministratore</button>
+      <a class="role-tab active" href="javascript:void(0)" onclick="setRole('dipendente');return false;">👤 Dipendente</a>
+      <a class="role-tab" href="javascript:void(0)" onclick="setRole('admin');return false;">⚙️ Amministratore</a>
     </div>
 
     <div id="group-dipendente">
@@ -960,7 +966,7 @@ body {
       </div>
     </div>
 
-    <button class="btn-primary" onclick="doLogin()">Accedi →</button>
+    <a class="btn-primary" href="javascript:void(0)" onclick="doLogin();return false;" ontouchend="this._t=1" style="display:block;text-align:center;text-decoration:none;">Accedi →</a>
   </div>
 </div>
 
