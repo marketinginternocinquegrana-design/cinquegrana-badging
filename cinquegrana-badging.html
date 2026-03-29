@@ -181,42 +181,61 @@ body { font-family:'Inter',sans-serif; background:var(--black); color:var(--whit
     </div>
 
     <div id="group-dipendente">
-      <div class="input-group">
-        <label>Seleziona il tuo nome</label>
-        <div class="native-select-wrap" id="select-wrap">
-          <span id="picker-label">— Scegli —</span>
-          <span class="picker-arrow">▾</span>
-          <select id="select-dip" onchange="onSelectChange(this.value)">
-            <option value="">— Scegli —</option>
-            <optgroup label="Sant'Arpino">
-              <option value="Rossella Cinquegrana">Rossella Cinquegrana</option>
-              <option value="Angela Cinquegrana">Angela Cinquegrana</option>
-              <option value="Francesca Puoti">Francesca Puoti</option>
-              <option value="Pietro Cerreto">Pietro Cerreto</option>
-            </optgroup>
-            <optgroup label="Giugliano">
-              <option value="Stefania Ciardulli">Stefania Ciardulli</option>
-              <option value="Alessandro Esposito">Alessandro Esposito</option>
-              <option value="Annalisa Severino">Annalisa Severino</option>
-              <option value="Antonella D'Isa">Antonella D'Isa</option>
-            </optgroup>
-            <optgroup label="Villaricca">
-              <option value="Lino Guida">Lino Guida</option>
-              <option value="Bruno Barrella">Bruno Barrella</option>
-            </optgroup>
-            <optgroup label="Ottaviano">
-              <option value="Ciro Carfora">Ciro Carfora</option>
-              <option value="Filomena Carfora">Filomena Carfora</option>
-              <option value="Luigi Franzese">Luigi Franzese</option>
-            </optgroup>
-            <optgroup label="Deposito Zeus">
-              <option value="Simona">Simona</option>
-              <option value="Silvana">Silvana</option>
-              <option value="Sara">Sara</option>
-              <option value="Correale">Correale</option>
-              <option value="Alessandra">Alessandra</option>
-            </optgroup>
-          </select>
+      <!-- PRIMA VOLTA: scelta nome -->
+      <div id="setup-box">
+        <div class="input-group">
+          <label>Seleziona il tuo nome</label>
+          <div class="native-select-wrap" id="select-wrap">
+            <span id="picker-label">— Scegli —</span>
+            <span class="picker-arrow">▾</span>
+            <select id="select-dip" onchange="onSelectChange(this.value)">
+              <option value="">— Scegli —</option>
+              <optgroup label="Sant'Arpino">
+                <option value="Rossella Cinquegrana">Rossella Cinquegrana</option>
+                <option value="Angela Cinquegrana">Angela Cinquegrana</option>
+                <option value="Francesca Puoti">Francesca Puoti</option>
+                <option value="Pietro Cerreto">Pietro Cerreto</option>
+              </optgroup>
+              <optgroup label="Giugliano">
+                <option value="Stefania Ciardulli">Stefania Ciardulli</option>
+                <option value="Alessandro Esposito">Alessandro Esposito</option>
+                <option value="Annalisa Severino">Annalisa Severino</option>
+                <option value="Antonella D'Isa">Antonella D'Isa</option>
+              </optgroup>
+              <optgroup label="Villaricca">
+                <option value="Lino Guida">Lino Guida</option>
+                <option value="Bruno Barrella">Bruno Barrella</option>
+              </optgroup>
+              <optgroup label="Ottaviano">
+                <option value="Ciro Carfora">Ciro Carfora</option>
+                <option value="Filomena Carfora">Filomena Carfora</option>
+                <option value="Luigi Franzese">Luigi Franzese</option>
+              </optgroup>
+              <optgroup label="Deposito Zeus">
+                <option value="Simona">Simona</option>
+                <option value="Silvana">Silvana</option>
+                <option value="Sara">Sara</option>
+                <option value="Correale">Correale</option>
+                <option value="Alessandra">Alessandra</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+        <div style="background:rgba(201,168,76,0.1);border:1px solid var(--border);border-radius:10px;padding:.75rem 1rem;font-size:.78rem;color:var(--gray);margin-bottom:1rem;line-height:1.5;">
+          ⚠️ <strong style="color:var(--gold);">Prima configurazione</strong><br>
+          Il tuo nome verrà associato a questo dispositivo. Non potrai cambiarlo senza la password admin.
+        </div>
+      </div>
+      <!-- DISPOSITIVO GIÀ REGISTRATO -->
+      <div id="device-box" style="display:none;">
+        <div style="background:rgba(201,168,76,0.08);border:1px solid var(--border);border-radius:14px;padding:1.25rem;margin-bottom:1rem;text-align:center;">
+          <div style="font-size:2rem;margin-bottom:.5rem;">👤</div>
+          <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:800;color:var(--white);" id="device-nome-display">—</div>
+          <div style="font-size:.75rem;color:var(--gray);margin-top:.25rem;" id="device-sede-display">—</div>
+          <div style="font-size:.7rem;color:var(--gold);margin-top:.75rem;">✅ Dispositivo registrato</div>
+        </div>
+        <div style="font-size:.75rem;color:var(--gray);text-align:center;margin-bottom:.75rem;">
+          Non sei tu? <a href="javascript:void(0)" onclick="resetDevice();return false;" style="color:var(--gold);text-decoration:underline;">Reimposta dispositivo</a>
         </div>
       </div>
     </div>
@@ -228,7 +247,7 @@ body { font-family:'Inter',sans-serif; background:var(--black); color:var(--whit
       </div>
     </div>
 
-    <a class="btn-primary" href="javascript:void(0)" onclick="doLogin();return false;">Accedi →</a>
+    <a class="btn-primary" href="javascript:void(0)" onclick="doLogin();return false;" id="btn-accedi">Accedi →</a>
   </div>
 </div>
 
@@ -318,6 +337,15 @@ body { font-family:'Inter',sans-serif; background:var(--black); color:var(--whit
       <p>Cancella tutti i badge e ripristina lo stato iniziale. Usa a inizio giornata.</p>
       <button class="btn-reset" onclick="resetPresenze()">Reset giornata</button>
     </div>
+    <div class="export-card">
+      <h3>📱 Gestione dispositivi</h3>
+      <p>Se un dipendente deve reimpostare il proprio dispositivo (es. telefono nuovo), inserisci la password admin e clicca il pulsante.</p>
+      <div style="display:flex;gap:.5rem;margin-bottom:.75rem;">
+        <input type="password" id="reset-device-pass" placeholder="Password admin" style="flex:1;padding:.6rem .8rem;border:1px solid #DDD;border-radius:8px;font-family:'Inter',sans-serif;font-size:.85rem;outline:none;">
+      </div>
+      <button class="btn-export" onclick="adminResetDevice()" style="background:#333;">🔓 Sblocca dispositivo selezionato</button>
+      <div style="margin-top:.75rem;font-size:.75rem;color:var(--gray);">Il dipendente potrà scegliere di nuovo il proprio nome alla prossima apertura dell'app.</div>
+    </div>
   </div>
 </div>
 
@@ -375,6 +403,8 @@ var currentRole    = 'dipendente';
 var selectedDip    = '';
 var scanner        = null;
 var scannerRunning = false;
+var deviceNome     = localStorage.getItem('cq_device_nome') || '';
+var DEVICE_KEY     = 'cq_device_nome';
 
 // ===== FIREBASE =====
 firebase.initializeApp({
@@ -406,6 +436,19 @@ function init() {
   });
   buildQRCards();
   buildChips();
+  checkDevice();
+
+  // Ascolta reset remoto dispositivo dall'admin
+  if (deviceNome) {
+    db.ref('device_reset/'+dbKey(deviceNome)).on('value', function(snap) {
+      if (snap.val()) {
+        localStorage.removeItem(DEVICE_KEY);
+        deviceNome = '';
+        checkDevice();
+        showToast('Dispositivo reimpostato dall\'admin','🔓');
+      }
+    });
+  }
 
   ref.on('value', function(snap) {
     var data = snap.val() || {};
@@ -421,6 +464,24 @@ function init() {
     var el = document.getElementById('db-status');
     if (el) el.textContent = '🔴 offline';
   });
+}
+
+function checkDevice() {
+  deviceNome = localStorage.getItem(DEVICE_KEY) || '';
+  if (deviceNome) {
+    // Dispositivo già registrato
+    var dip = DIPENDENTI.filter(function(d){ return d.nome === deviceNome; })[0];
+    document.getElementById('setup-box').style.display  = 'none';
+    document.getElementById('device-box').style.display = 'block';
+    document.getElementById('device-nome-display').textContent = deviceNome;
+    document.getElementById('device-sede-display').textContent = dip ? dip.ruolo + ' · ' + dip.sede : '';
+    document.getElementById('btn-accedi').textContent = 'Badia →';
+  } else {
+    // Prima volta
+    document.getElementById('setup-box').style.display  = 'block';
+    document.getElementById('device-box').style.display = 'none';
+    document.getElementById('btn-accedi').textContent = 'Registra questo dispositivo →';
+  }
 }
 
 // ===== HELPERS =====
@@ -465,8 +526,18 @@ function onSelectChange(val) {
 // ===== LOGIN / LOGOUT =====
 function doLogin() {
   if (currentRole === 'dipendente') {
-    var nome = document.getElementById('select-dip').value || selectedDip;
-    if (!nome) { showToast('Seleziona il tuo nome','⚠️'); return; }
+    var nome;
+    deviceNome = localStorage.getItem(DEVICE_KEY) || '';
+    if (deviceNome) {
+      // Dispositivo già registrato — usa direttamente
+      nome = deviceNome;
+    } else {
+      // Prima volta — registra il dispositivo
+      nome = document.getElementById('select-dip').value || selectedDip;
+      if (!nome) { showToast('Seleziona il tuo nome','⚠️'); return; }
+      localStorage.setItem(DEVICE_KEY, nome);
+      deviceNome = nome;
+    }
     currentUser = nome;
     var dip = DIPENDENTI.filter(function(d){ return d.nome===nome; })[0];
     document.getElementById('dip-name-header').textContent = nome;
@@ -482,14 +553,41 @@ function doLogin() {
   }
 }
 
+function resetDevice() {
+  // Il dipendente clicca "Non sei tu?" — chiede conferma
+  if (!confirm('Vuoi reimpostare questo dispositivo?\nDovrai scegliere di nuovo il tuo nome.')) return;
+  // Richiede password admin per sicurezza
+  var pass = prompt('Inserisci la password amministratore per confermare:');
+  if (pass !== ADMIN_PASS) { showToast('Password errata — operazione annullata','❌'); return; }
+  localStorage.removeItem(DEVICE_KEY);
+  deviceNome = '';
+  checkDevice();
+  showToast('Dispositivo reimpostato','✅');
+}
+
+function adminResetDevice() {
+  var pass = document.getElementById('reset-device-pass').value;
+  if (pass !== ADMIN_PASS) { showToast('Password errata','❌'); return; }
+  // Mostra lista dipendenti per scegliere quale sbloccare
+  var nomi = DIPENDENTI.map(function(d){ return d.nome; });
+  var scelta = prompt('Inserisci il nome esatto del dipendente da sbloccare:\n\n'+nomi.join('\n'));
+  if (!scelta) return;
+  var trovato = DIPENDENTI.filter(function(d){ return d.nome===scelta; })[0];
+  if (!trovato) { showToast('Nome non trovato','❌'); return; }
+  db.ref('device_reset/'+dbKey(scelta)).set(Date.now());
+  showToast('Dispositivo di '+scelta+' sbloccato','✅');
+  document.getElementById('reset-device-pass').value = '';
+}
+
 function logout() {
   stopScanner();
   currentUser = null;
   selectedDip = '';
-  document.getElementById('admin-pass').value   = '';
-  document.getElementById('select-dip').value   = '';
+  document.getElementById('admin-pass').value = '';
+  document.getElementById('select-dip').value = '';
   document.getElementById('picker-label').textContent = '— Scegli —';
   document.getElementById('select-wrap').classList.remove('chosen');
+  checkDevice();
   showScreen('screen-login');
 }
 
