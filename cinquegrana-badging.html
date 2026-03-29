@@ -1376,9 +1376,9 @@ function registraBadge(nome, sede, distMetri = null) {
   const now = new Date();
   const ora = now.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
   const data = todayStr();
-  const p = presenze[nome];
+  const p = presenze[nome] || { status: 'out', logs: [] };
+  presenze[nome] = p;
   const isEntrata = p.status === 'out';
-
   p.status = isEntrata ? 'in' : 'out';
   p.logs.unshift({ tipo: isEntrata ? 'in' : 'out', sede, ora, data, dist: distMetri });
   saveToFirebase(nome);
@@ -1390,7 +1390,7 @@ function registraBadge(nome, sede, distMetri = null) {
 
 // ========== RENDER DIPENDENTE ==========
 function renderDipendente() {
-  const p = presenze[currentUser];
+  const p = presenze[currentUser] || { status: 'out', logs: [] };
   const isIn = p.status === 'in';
 
   document.getElementById('current-status-text').textContent = isIn ? 'In servizio' : 'Fuori sede';
@@ -1430,8 +1430,8 @@ function renderDashboard() {
     weekday:'long', day:'numeric', month:'long', year:'numeric'
   });
 
-  const presenti = Object.values(presenze).filter(p => p.status === 'in').length;
-  const totaleBadge = Object.values(presenze).reduce((s, p) => s + p.logs.length, 0);
+  const presenti = Object.values(presenze).filter(p => p && p.status === 'in').length;
+  const totaleBadge = Object.values(presenze).reduce((s, p) => s + (p && p.logs ? p.logs.length : 0), 0);
 
   document.getElementById('stat-presenti').textContent = presenti;
   document.getElementById('stat-oggi').textContent = totaleBadge;
@@ -1466,7 +1466,7 @@ function renderDipList(filter) {
   const list = document.getElementById('dip-list');
 
   list.innerHTML = filtered.map(d => {
-    const p = presenze[d.nome];
+    const p = presenze[d.nome] || { status: 'out', logs: [] };
     const isIn = p.status === 'in';
     const last = p.logs[0];
     const detail = last
