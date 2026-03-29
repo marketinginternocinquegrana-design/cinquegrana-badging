@@ -491,6 +491,10 @@ body {
   color: var(--gray);
   transition: all 0.2s;
   font-family: 'Inter', sans-serif;
+  text-decoration: none;
+  display: inline-block;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0,0,0,0.1);
 }
 
 .chip.active {
@@ -1409,17 +1413,20 @@ let currentFilter = 'all';
 function buildChips() {
   const sediNomi = ["Sant'Arpino", 'Giugliano', 'Villaricca', 'Ottaviano', 'Deposito Zeus'];
   const container = document.getElementById('chips-sedi');
-  container.innerHTML = `<button class="chip active" onclick="filterSede('all',this)">Tutte le sedi</button>`;
-  sediNomi.forEach(s => {
-    container.innerHTML += `<button class="chip" onclick="filterSede('${s}',this)">${s}</button>`;
+  container.innerHTML = `<a class="chip active" href="javascript:void(0)" onclick="filterSede('all',this);return false;">Tutte le sedi</a>`;
+  sediNomi.forEach((s, i) => {
+    container.innerHTML += `<a class="chip" href="javascript:void(0)" onclick="filterSede(${i},this);return false;">${s}</a>`;
   });
 }
+
+const SEDI_NOMI = ["Sant'Arpino", 'Giugliano', 'Villaricca', 'Ottaviano', 'Deposito Zeus'];
 
 function filterSede(sede, btn) {
   currentFilter = sede;
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   btn.classList.add('active');
-  renderDipList(sede);
+  const nomeSede = sede === 'all' ? 'all' : SEDI_NOMI[sede];
+  renderDipList(nomeSede);
 }
 
 function renderDipList(filter) {
