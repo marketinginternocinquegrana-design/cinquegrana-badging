@@ -1456,8 +1456,8 @@ function buildQRCards() {
       <div class="qr-sede-name">${sede.nome}</div>
       <div class="qr-box" id="qrbox-${key}"></div>
       <div class="qr-sede-addr">${sede.indirizzo}</div>
-      <button class="btn-print-qr" onclick="printQR('${key}','${sede.nome}')">🖨 Stampa</button>
-      <button class="btn-print-qr" style="background:var(--mid);margin-top:0.4rem;" onclick="downloadQR('${key}','${sede.nome}')">⬇ Scarica PNG</button>
+      <button class="btn-print-qr" onclick="printQR('${key}')">🖨 Stampa</button>
+      <button class="btn-print-qr" style="background:var(--mid);margin-top:0.4rem;" onclick="downloadQR('${key}')">⬇ Scarica PNG</button>
     `;
     grid.appendChild(card);
 
@@ -1474,7 +1474,8 @@ function buildQRCards() {
   });
 }
 
-function printQR(key, nomeSede) {
+function printQR(key) {
+  const nomeSede = SEDI[key].nome;
   const qrEl = document.getElementById(`qrbox-${key}`);
   const canvas = qrEl.querySelector('canvas');
   const img    = qrEl.querySelector('img');
@@ -1540,7 +1541,8 @@ function printQR(key, nomeSede) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-function downloadQR(key, nomeSede) {
+function downloadQR(key) {
+  const nomeSede = SEDI[key].nome;
   const qrEl  = document.getElementById(`qrbox-${key}`);
   const canvas = qrEl.querySelector('canvas');
   const img    = qrEl.querySelector('img');
