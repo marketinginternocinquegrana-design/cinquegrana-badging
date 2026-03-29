@@ -6,6 +6,8 @@
 <title>Badging — Arredamenti Cinquegrana</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1032,7 +1034,7 @@ body {
       <div class="header-icon">C</div>
       <div>
         <div class="header-name">Pannello Admin</div>
-        <div class="header-role">Arredamenti Cinquegrana</div>
+        <div class="header-role">Arredamenti Cinquegrana · <span id="db-status" style="color:#888;">⏳ connessione...</span></div>
       </div>
     </div>
     <button class="btn-logout" onclick="logout()">Esci</button>
@@ -1153,41 +1155,71 @@ const DIPENDENTI = [
 ];
 
 // ========== STATO ==========
-let presenze = {};        // { nome: { status, logs: [{tipo, sede, ora, data}] } }
+let presenze = {};
 let currentUser = null;
 let currentRole = 'dipendente';
 let scanner = null;
 let scannerRunning = false;
 const ADMIN_PASS = 'cinquegrana2026';
-const STORAGE_KEY = 'cinquegrana_presenze';
+
+// ========== FIREBASE ==========
+const firebaseConfig = {
+  apiKey: "AIzaSyAttL1l-ee-pJKpvqZmozGxfLnONyzn6tI",
+  authDomain: "cinquegrana-badging.firebaseapp.com",
+  databaseURL: "https://cinquegrana-badging-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "cinquegrana-badging",
+  storageBucket: "cinquegrana-badging.firebasestorage.app",
+  messagingSenderId: "258517057107",
+  appId: "1:258517057107:web:d4bcea9628132ea1b110a6"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const presenzeRef = db.ref('presenze');
 
 // ========== INIT ==========
 function init() {
-  // Carica da localStorage
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    presenze = JSON.parse(saved);
-    // aggiunge eventuali nuovi dipendenti
-    DIPENDENTI.forEach(d => {
-      if (!presenze[d.nome]) presenze[d.nome] = { status: 'out', logs: [] };
-    });
-  } else {
-    DIPENDENTI.forEach(d => {
-      presenze[d.nome] = { status: 'out', logs: [] };
-    });
-  }
+  // Inizializza struttura locale
+  DIPENDENTI.forEach(d => {
+    presenze[d.nome] = { status: 'out', logs: [] };
+  });
 
-  // Select dipendenti già popolato nell'HTML
-
-  // Genera QR nell'admin
+  // Genera QR e chips
   buildQRCards();
-
-  // Chips sedi
   buildChips();
+
+  // Ascolta Firebase in tempo reale
+  presenzeRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      DIPENDENTI.forEach(d => {
+        const key = sanitizeKey(d.nome);
+        if (data[key]) presenze[d.nome] = data[key];
+      });
+    }
+    // Aggiorna indicatore connessione
+    const dbStatus = document.getElementById('db-status');
+    if (dbStatus) dbStatus.innerHTML = '🟢 live';
+
+    if (document.getElementById('screen-dashboard').classList.contains('active')) {
+      renderDashboard();
+    }
+    if (currentUser && document.getElementById('screen-dipendente').classList.contains('active')) {
+      renderDipendente();
+    }
+  }, (error) => {
+    const dbStatus = document.getElementById('db-status');
+    if (dbStatus) dbStatus.innerHTML = '🔴 offline';
+  });
 }
 
-function saveStorage() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(presenze));
+// Firebase non accetta . # $ [ ] nelle chiavi
+function sanitizeKey(nome) {
+  return nome.replace(/[.#$\[\]]/g, '_').replace(/'/g, '');
+}
+
+function saveToFirebase(nome) {
+  const key = sanitizeKey(nome);
+  presenzeRef.child(key).set(presenze[nome]);
 }
 
 // ========== SELECT NATIVO ==========
@@ -1349,7 +1381,7 @@ function registraBadge(nome, sede, distMetri = null) {
 
   p.status = isEntrata ? 'in' : 'out';
   p.logs.unshift({ tipo: isEntrata ? 'in' : 'out', sede, ora, data, dist: distMetri });
-  saveStorage();
+  saveToFirebase(nome);
 
   const geoTag = distMetri !== null && distMetri > 0 ? ` · 📍${distMetri}m` : '';
   showToast(isEntrata ? `✅ Entrata – ${sede}${geoTag}` : `👋 Uscita – ${sede}${geoTag}`);
@@ -1670,8 +1702,8 @@ function resetPresenze() {
   if (!confirm('Sei sicuro di voler resettare tutte le presenze della giornata?')) return;
   DIPENDENTI.forEach(d => {
     presenze[d.nome] = { status: 'out', logs: [] };
+    saveToFirebase(d.nome);
   });
-  saveStorage();
   renderDashboard();
   showToast('Presenze azzerate', '🔄');
 }
