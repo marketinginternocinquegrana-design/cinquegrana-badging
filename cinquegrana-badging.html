@@ -1224,7 +1224,7 @@ function todayStr() {
 // ========== LOGIN ==========
 function doLogin() {
   if (currentRole === 'dipendente') {
-    const sel = selectedDipendente;
+    const sel = document.getElementById('select-dip').value || selectedDipendente;
     if (!sel) return showToast('Seleziona il tuo nome', '⚠️');
     currentUser = sel;
     const dip = DIPENDENTI.find(d => d.nome === sel);
