@@ -365,7 +365,7 @@ var SEDI={
   'OTTAVIANO':{nome:'Ottaviano',indirizzo:'Ottaviano (NA)',lat:40.8595950,lng:14.4733764},
   'DEPOSITOZEUS':{nome:'Deposito Zeus',indirizzo:'Deposito Zeus',lat:40.9443205,lng:14.2211218}
 };
-var GEO_RAGGIO=100;
+var GEO_RAGGIO=200;
 var ADMIN_PASS='cinquegrana2026';
 var SEDI_NOMI=["Sant'Arpino",'Giugliano','Villaricca','Ottaviano','Deposito Zeus'];
 var MP=[9*60,13*60,15*60+30,20*60];
@@ -515,16 +515,17 @@ function aggiornaStatoNotifiche(){
   else if (Notification.permission==='denied'){el.textContent='❌ Notifiche bloccate dal browser. Vai nelle impostazioni del browser e consenti le notifiche per questo sito.';}
   else {el.textContent='ℹ️ Notifiche non ancora attivate. Clicca il pulsante qui sopra.';}
 }
+function richiediNotifiche(){
   if (!('Notification' in window)){showToast('Browser non supporta notifiche','⚠️');return;}
-  if (Notification.permission === 'granted'){showToast('Notifiche già attive ✅','🔔');return;}
+  if (Notification.permission === 'granted'){showToast('Notifiche già attive ✅','🔔');aggiornaStatoNotifiche();return;}
   Notification.requestPermission().then(function(p){
     if (p==='granted'){
       showToast('Notifiche attivate!','🔔');
-      // Notifica di test
       new Notification('✅ Cinquegrana Badging', {body:'Notifiche attive. Riceverai gli alert degli assenti.',tag:'test'});
     } else {
       showToast('Notifiche negate dal browser','❌');
     }
+    aggiornaStatoNotifiche();
   });
 }
 
