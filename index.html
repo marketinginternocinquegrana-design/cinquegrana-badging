@@ -4,1589 +4,2047 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Badging — Arredamenti Cinquegrana</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --gold: #C9A84C;
-  --gold-light: #E8C97A;
-  --gold-dark: #9E7A2E;
-  --gold-bg: #FBF6EC;
-  --black: #0E0E0E;
-  --dark: #1A1A1A;
-  --mid: #2C2C2C;
-  --gray: #888;
-  --light-gray: #F4F4F2;
-  --white: #FFFFFF;
-  --green: #2E7D52;
-  --green-bg: #EAF5EF;
-  --red: #C0392B;
-  --red-bg: #FDECEA;
-  --border: rgba(201,168,76,0.2);
+  --gold: #C8A96E;
+  --gold-light: #E8C98A;
+  --dark: #0F0E0C;
+  --dark2: #1A1916;
+  --dark3: #242320;
+  --mid: #3A3830;
+  --text: #F0EDE6;
+  --text-muted: #8A8578;
+  --red: #E05252;
+  --green: #52B788;
+  --blue: #5B8DEE;
+  --orange: #E0913A;
+  --radius: 12px;
 }
 
-* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-
-button { touch-action: manipulation; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background: var(--black);
-  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  background: var(--dark);
+  color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* ======= SCREENS ======= */
-.screen { display:none; min-height:100vh; flex-direction:column; }
-.screen.active { display:flex; }
-
-/* ======= LOGIN ======= */
-#screen-login {
-  background: var(--black);
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1.5rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.login-deco {
-  position: absolute;
-  top: -120px; right: -120px;
-  width: 480px; height: 480px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 65%);
-  pointer-events: none;
-}
-
-.login-deco2 {
-  position: absolute;
-  bottom: -80px; left: -80px;
-  width: 300px; height: 300px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(201,168,76,0.07) 0%, transparent 65%);
-  pointer-events: none;
-}
-
-.login-box {
-  width: 100%;
-  max-width: 380px;
-  position: relative;
-  z-index: 1;
-  animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes fadeUp {
-  from { opacity:0; transform:translateY(20px); }
-  to { opacity:1; transform:translateY(0); }
-}
-
-.brand-mark {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 2.5rem;
-}
-
-.brand-icon {
-  width: 48px; height: 48px;
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-  border-radius: 12px;
-  display: flex; align-items:center; justify-content:center;
-  font-family: 'Playfair Display', serif;
-  font-size: 1.4rem;
-  font-weight: 900;
-  color: var(--black);
-  box-shadow: 0 8px 24px rgba(201,168,76,0.35);
-  flex-shrink: 0;
-}
-
-.brand-text-block { line-height: 1; }
-
-.brand-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--gold);
-  letter-spacing: 0.02em;
-}
-
-.brand-sub {
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--gray);
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-top: 0.15rem;
-}
-
-.login-heading {
-  font-family: 'Playfair Display', serif;
-  font-size: 2.2rem;
-  font-weight: 900;
-  line-height: 1.1;
-  margin-bottom: 0.4rem;
-  color: var(--white);
-}
-
-.login-heading span { color: var(--gold); }
-
-.login-tagline {
-  color: var(--gray);
-  font-size: 0.85rem;
-  margin-bottom: 2rem;
-}
-
-.role-tabs {
-  display: flex;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 3px;
-  margin-bottom: 1.5rem;
-}
-
-.role-tab {
-  flex: 1;
-  padding: 0.55rem;
-  text-align: center;
-  border-radius: 8px;
-  color: var(--gray);
-  font-size: 0.82rem;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  background: none;
-  transition: all 0.2s;
-  font-family: 'Inter', sans-serif;
-}
-
-.role-tab.active {
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-  color: var(--black);
-  font-weight: 600;
-}
-
-.input-group { margin-bottom: 1rem; }
-
-.input-group label {
-  display: block;
-  color: var(--gray);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  margin-bottom: 0.35rem;
-}
-
-.input-group input, .input-group select {
-  width: 100%;
-  padding: 0.8rem 1rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-  color: white;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  outline: none;
-  transition: border-color 0.2s;
-  appearance: none;
-}
-
-.input-group input:focus, .input-group select:focus { border-color: var(--gold); }
-.input-group select option { background: #222; color: white; }
-
-.btn-primary {
-  width: 100%;
-  padding: 0.9rem;
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-  color: var(--black);
-  border: none;
-  border-radius: 10px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  margin-top: 0.25rem;
-  transition: all 0.2s;
-  box-shadow: 0 4px 20px rgba(201,168,76,0.35);
-  letter-spacing: 0.02em;
-}
-
-.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(201,168,76,0.45); }
-.btn-primary:active { transform: translateY(0); }
-
-/* ======= APP HEADER ======= */
-.app-header {
-  background: var(--dark);
-  padding: 1rem 1.25rem;
+/* ═══ HEADER ═══ */
+.header {
+  background: var(--dark2);
+  border-bottom: 1px solid rgba(200,169,110,0.2);
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
-.header-left { display:flex; align-items:center; gap:0.7rem; }
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 
-.header-icon {
+.logo-circle {
   width: 34px; height: 34px;
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
-  border-radius: 9px;
-  display: flex; align-items:center; justify-content:center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  display: flex; align-items: center; justify-content: center;
   font-family: 'Playfair Display', serif;
   font-weight: 900;
-  color: var(--black);
-  font-size: 0.9rem;
-  flex-shrink: 0;
+  font-size: 16px;
+  color: var(--dark);
 }
 
-.header-name {
+.logo-text {
   font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  color: var(--white);
-  font-size: 0.9rem;
-  line-height: 1.2;
+  font-size: 15px;
+  color: var(--gold);
+  letter-spacing: 0.5px;
 }
 
-.header-role { color: var(--gray); font-size: 0.72rem; margin-top: 0.1rem; }
+.logo-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
 
-.btn-logout {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--dark3);
   border-radius: 8px;
-  color: var(--gray);
-  padding: 0.35rem 0.75rem;
-  font-size: 0.78rem;
+  padding: 3px;
+}
+
+.tab {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  transition: all 0.2s;
+  transition: all .2s;
 }
 
-.btn-logout:hover { color: var(--white); border-color: rgba(255,255,255,0.25); }
-
-/* ======= DIPENDENTE ======= */
-#screen-dipendente { background: var(--light-gray); color: var(--black); }
-
-.dip-content {
-  padding: 1.25rem;
-  flex: 1;
-  overflow-y: auto;
+.tab.active {
+  background: var(--gold);
+  color: var(--dark);
+  font-weight: 600;
 }
 
+/* ═══ VIEWS ═══ */
+.view { display: none; padding: 20px; max-width: 500px; margin: 0 auto; }
+.view.active { display: block; }
+
+/* ═══ CARDS ═══ */
 .card {
-  background: var(--white);
-  border-radius: 16px;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  background: var(--dark2);
+  border: 1px solid rgba(200,169,110,0.15);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 14px;
 }
 
 .card-title {
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--black);
-  margin-bottom: 0.2rem;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  margin-bottom: 12px;
+  font-weight: 600;
 }
 
-.card-sub { color: var(--gray); font-size: 0.8rem; }
+/* ═══ SELECT ═══ */
+select, input[type=text], input[type=password], input[type=time], input[type=date] {
+  width: 100%;
+  background: var(--dark3);
+  border: 1px solid rgba(200,169,110,0.2);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 11px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s;
+  -webkit-appearance: none;
+}
 
-.status-row {
+select:focus, input:focus {
+  border-color: var(--gold);
+}
+
+/* ═══ BUTTONS ═══ */
+.btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 8px;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  letter-spacing: 0.3px;
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  color: var(--dark);
+}
+
+.btn-gold:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(200,169,110,0.3);
+  color: var(--text-muted);
+}
+
+.btn-red { background: var(--red); color: #fff; }
+.btn-green { background: var(--green); color: #fff; }
+.btn-blue { background: var(--blue); color: #fff; }
+
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 12px;
+  width: auto;
+  border-radius: 6px;
+}
+
+.btn-row {
   display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ═══ BADGE BUTTONS ═══ */
+.badge-btn {
+  flex: 1;
+  padding: 22px 10px;
+  border-radius: 10px;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  margin-top: 0.75rem;
+  gap: 6px;
 }
 
-.status-big {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: var(--black);
-}
+.badge-btn .icon { font-size: 24px; }
+.badge-btn.entry { background: rgba(82,183,136,0.15); border: 1px solid var(--green); color: var(--green); }
+.badge-btn.exit  { background: rgba(224,82,82,0.15);  border: 1px solid var(--red);   color: var(--red);   }
+.badge-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
+/* ═══ STATUS PILL ═══ */
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.75rem;
-  border-radius: 100px;
-  font-size: 0.78rem;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
-.pill::before { content: '●'; font-size: 0.45rem; }
-.pill.in { background: var(--green-bg); color: var(--green); }
-.pill.out { background: var(--red-bg); color: var(--red); }
-.pill.neutral { background: #F0F0F0; color: var(--gray); }
+.pill-green { background: rgba(82,183,136,0.15); color: var(--green); }
+.pill-red   { background: rgba(224,82,82,0.15);   color: var(--red);   }
+.pill-grey  { background: rgba(138,133,120,0.15); color: var(--text-muted); }
+.pill-orange{ background: rgba(224,145,58,0.15);  color: var(--orange); }
 
-.last-scan {
-  font-size: 0.8rem;
-  color: var(--gray);
-  margin-top: 0.6rem;
-  padding-top: 0.6rem;
-  border-top: 1px solid #F0F0F0;
-}
-
-/* SCAN */
-.scan-viewer {
-  background: #111;
-  border-radius: 12px;
-  overflow: hidden;
-  min-height: 200px;
-  display: none;
-  margin-bottom: 1rem;
-  position: relative;
-}
-
-.scan-viewer.open { display: block; }
-
-#reader { width: 100%; }
-
-.btn-scan {
-  width: 100%;
-  padding: 0.85rem;
-  background: var(--black);
-  color: var(--white);
-  border: none;
-  border-radius: 10px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: 0.6rem;
-}
-
-.btn-scan:hover { background: var(--mid); }
-
-.btn-demo {
-  width: 100%;
-  padding: 0.75rem;
-  background: transparent;
-  color: var(--gray);
-  border: 1px dashed #DDD;
-  border-radius: 10px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.83rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-demo:hover { border-color: var(--gold); color: var(--gold-dark); }
-
-/* HISTORY */
-.hist-item {
+/* ═══ TIMELINE ═══ */
+.timeline { list-style: none; }
+.timeline li {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.7rem 0;
-  border-bottom: 1px solid #F5F5F5;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 13px;
 }
-
-.hist-item:last-child { border-bottom: none; }
-
-.hist-dot {
-  width: 10px; height: 10px;
+.timeline li:last-child { border-bottom: none; }
+.tl-dot {
+  width: 8px; height: 8px;
   border-radius: 50%;
+  margin-top: 5px;
   flex-shrink: 0;
 }
+.tl-green { background: var(--green); }
+.tl-red { background: var(--red); }
+.tl-orange { background: var(--orange); }
+.tl-time { color: var(--text-muted); font-size: 12px; min-width: 45px; }
+.tl-note { color: var(--text-muted); font-size: 11px; }
 
-.hist-dot.in { background: var(--green); }
-.hist-dot.out { background: var(--red); }
-
-.hist-label { font-size: 0.85rem; font-weight: 600; color: var(--black); }
-.hist-loc { font-size: 0.75rem; color: var(--gray); }
-.hist-time { margin-left: auto; font-size: 0.8rem; font-weight: 600; color: var(--black); }
-.hist-date { font-size: 0.68rem; color: var(--gray); }
-
-/* ======= ADMIN TABS ======= */
-#screen-dashboard { background: var(--light-gray); color: var(--black); }
-
-.admin-tabs {
-  display: flex;
-  background: var(--dark);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.admin-tab {
-  flex: 1;
-  padding: 0.75rem 0.5rem;
-  text-align: center;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--gray);
-  cursor: pointer;
-  border: none;
-  background: none;
-  font-family: 'Inter', sans-serif;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-  letter-spacing: 0.02em;
-}
-
-.admin-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
-
-.admin-panel { display:none; flex:1; overflow-y:auto; padding:1.25rem; }
-.admin-panel.active { display:block; }
-
-/* STATS ROW */
-.stats-row {
+/* ═══ ADMIN GRID ═══ */
+.stats-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
 }
 
-.stat-card {
-  background: var(--white);
-  border-radius: 14px;
-  padding: 1rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+.stat-box {
+  background: var(--dark3);
+  border-radius: 10px;
+  padding: 14px 10px;
+  text-align: center;
 }
 
 .stat-num {
   font-family: 'Playfair Display', serif;
-  font-size: 2rem;
-  font-weight: 900;
-  color: var(--black);
+  font-size: 28px;
+  font-weight: 700;
   line-height: 1;
+  margin-bottom: 4px;
 }
 
 .stat-label {
-  font-size: 0.73rem;
-  color: var(--gray);
-  font-weight: 500;
-  margin-top: 0.25rem;
+  font-size: 10px;
+  color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.07em;
+  letter-spacing: 1px;
 }
 
-/* SEDE CHIPS */
-.chips {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
-}
-
-.chip {
-  padding: 0.35rem 0.8rem;
-  border-radius: 100px;
-  font-size: 0.76rem;
-  font-weight: 600;
-  cursor: pointer;
-  border: 1px solid #DDD;
-  background: white;
-  color: var(--gray);
-  transition: all 0.2s;
-  font-family: 'Inter', sans-serif;
-}
-
-.chip.active {
-  background: var(--black);
-  color: var(--gold);
-  border-color: var(--black);
-}
-
-/* DIP CARDS */
-.dip-card {
-  background: var(--white);
-  border-radius: 13px;
-  padding: 0.9rem 1rem;
-  margin-bottom: 0.6rem;
+/* ═══ EMPLOYEE ROWS ═══ */
+.emp-row {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  cursor: pointer;
-  transition: transform 0.15s;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  background: var(--dark3);
+  margin-bottom: 6px;
 }
 
-.dip-card:hover { transform: translateX(3px); }
-
-.dip-avatar {
-  width: 40px; height: 40px;
+.emp-avatar {
+  width: 34px; height: 34px;
   border-radius: 50%;
-  background: var(--gold-bg);
-  display: flex; align-items:center; justify-content:center;
-  font-family: 'Playfair Display', serif;
+  background: var(--mid);
+  display: flex; align-items: center; justify-content: center;
   font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--gold-dark);
+  font-size: 13px;
+  color: var(--gold);
   flex-shrink: 0;
-  border: 1.5px solid rgba(201,168,76,0.3);
 }
 
-.dip-name { font-weight: 600; font-size: 0.88rem; color: var(--black); }
-.dip-detail { font-size: 0.74rem; color: var(--gray); margin-top: 0.1rem; }
+.emp-name { font-size: 13px; font-weight: 500; flex: 1; }
+.emp-sede { font-size: 11px; color: var(--text-muted); }
+.emp-status { font-size: 20px; }
 
-/* ======= QR SECTION ======= */
-.qr-intro {
-  background: var(--white);
-  border-radius: 14px;
-  padding: 1.1rem;
-  margin-bottom: 1.25rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  font-size: 0.82rem;
-  color: var(--gray);
-  line-height: 1.5;
-}
-
-.qr-intro strong { color: var(--black); }
-
-.qr-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.85rem;
-}
-
-.qr-card {
-  background: var(--white);
-  border-radius: 16px;
-  padding: 1.1rem;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+/* ═══ ALERT ROW ═══ */
+.alert-row {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.qr-sede-name {
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--black);
-  text-align: center;
-}
-
-.qr-sede-addr {
-  font-size: 0.68rem;
-  color: var(--gray);
-  text-align: center;
-  line-height: 1.4;
-}
-
-.qr-box {
-  width: 120px; height: 120px;
-  background: white;
-  display: flex; align-items:center; justify-content:center;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
   border-radius: 8px;
-  border: 1.5px solid #EEE;
-  overflow: hidden;
+  background: rgba(224,82,82,0.08);
+  border: 1px solid rgba(224,82,82,0.25);
+  margin-bottom: 6px;
 }
 
-.btn-print-qr {
+.alert-icon { font-size: 18px; flex-shrink: 0; }
+.alert-name { font-size: 13px; font-weight: 600; }
+.alert-msg  { font-size: 11px; color: var(--red); margin-top: 2px; }
+.alert-time { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* ═══ REPORT TABLE ═══ */
+.report-wrap { overflow-x: auto; }
+
+table.rep {
   width: 100%;
-  padding: 0.5rem;
-  background: var(--black);
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+table.rep th {
+  background: var(--dark3);
   color: var(--gold);
-  border: none;
-  border-radius: 8px;
-  font-size: 0.74rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: 'Inter', sans-serif;
-  transition: all 0.2s;
-}
-
-.btn-print-qr:hover { background: var(--mid); }
-
-/* ======= EXPORT SECTION ======= */
-.export-card {
-  background: var(--white);
-  border-radius: 14px;
-  padding: 1.25rem;
-  margin-bottom: 1rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-}
-
-.export-card h3 {
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--black);
-  margin-bottom: 0.3rem;
-}
-
-.export-card p { font-size: 0.8rem; color: var(--gray); margin-bottom: 1rem; line-height: 1.5; }
-
-.btn-export {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1.25rem;
-  background: var(--black);
-  color: var(--gold);
-  border: none;
-  border-radius: 10px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-decoration: none;
-}
-
-.btn-export:hover { background: var(--mid); }
-
-.btn-reset {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.7rem 1.25rem;
-  background: transparent;
-  color: var(--red);
-  border: 1px solid var(--red);
-  border-radius: 10px;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-top: 0.75rem;
-}
-
-.btn-reset:hover { background: var(--red-bg); }
-
-.export-preview {
-  margin-top: 1rem;
-  background: var(--light-gray);
-  border-radius: 10px;
-  padding: 0.75rem;
-  font-size: 0.75rem;
-  font-family: 'Courier New', monospace;
-  color: var(--mid);
-  max-height: 160px;
-  overflow-y: auto;
-}
-
-/* ======= NATIVE SELECT WRAP (iOS safe) ======= */
-.native-select-wrap {
-  position: relative;
-  width: 100%;
-  padding: 0.8rem 1rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-  color: white;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.native-select-wrap.chosen { border-color: var(--gold); }
-
-.native-select-wrap select {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-  font-size: 1rem; /* iOS richiede min 16px per non zoomare */
-  border: none;
-  background: transparent;
-}
-
-
-.custom-picker-btn {
-  width: 100%;
-  padding: 0.8rem 1rem;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-  color: white;
-  font-family: 'Inter', sans-serif;
-  font-size: 0.95rem;
+  padding: 8px 10px;
   text-align: left;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  transition: border-color 0.2s;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: rgba(201,168,76,0.15);
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.custom-picker-btn:focus { border-color: var(--gold); outline: none; }
-.picker-arrow { color: var(--gold); font-size: 1rem; }
-
-.picker-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.85rem 0.5rem;
-  border-bottom: 1px solid #F0F0F0;
-  cursor: pointer;
-  border-radius: 8px;
-  text-decoration: none;
-  color: inherit;
-  background: transparent;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: rgba(201,168,76,0.15);
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.picker-item:last-child { border-bottom: none; }
-.picker-item:active { background: var(--gold-bg); }
-
-.picker-item-name { font-weight: 600; font-size: 0.9rem; color: var(--black); }
-.picker-item-sede { font-size: 0.75rem; color: var(--gray); margin-top: 0.1rem; }
-.picker-item-check { color: var(--gold); font-size: 1.1rem; opacity: 0; }
-.picker-item.selected .picker-item-check { opacity: 1; }
-.picker-item.selected .picker-item-name { color: var(--gold-dark); }
-
-.picker-sede-header {
-  font-size: 0.68rem;
-  font-weight: 700;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--gray);
-  padding: 0.75rem 0.5rem 0.3rem;
-}
-
-
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(4px);
-  z-index: 100;
-  display: none;
-  align-items: flex-end;
-}
-
-.modal-overlay.open { display:flex; }
-
-.modal-sheet {
-  background: var(--white);
-  border-radius: 20px 20px 0 0;
-  padding: 1.5rem;
-  width: 100%;
-  max-height: 70vh;
-  overflow-y: auto;
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  color: var(--black);
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-.modal-handle {
-  width: 40px; height: 4px;
-  background: #DDD;
-  border-radius: 2px;
-  margin: 0 auto 1.25rem;
-}
-
-.modal-dip-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.3rem;
-  font-weight: 800;
-  margin-bottom: 0.2rem;
-}
-
-.modal-dip-role { font-size: 0.8rem; color: var(--gray); margin-bottom: 1.25rem; }
-
-.modal-log {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid #F5F5F5;
-}
-
-.modal-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink:0; }
-.modal-dot.in { background: var(--green); }
-.modal-dot.out { background: var(--red); }
-.modal-log-text { font-size: 0.85rem; font-weight: 500; color: var(--black); flex:1; }
-.modal-log-detail { font-size: 0.72rem; color: var(--gray); }
-.modal-log-time { font-size: 0.82rem; font-weight: 700; color: var(--black); }
-
-.btn-close {
-  width: 100%;
-  padding: 0.8rem;
-  margin-top: 1.25rem;
-  background: var(--light-gray);
-  border: none;
-  border-radius: 10px;
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: 0.88rem;
-  cursor: pointer;
-  color: var(--black);
-}
-
-/* ======= TOAST ======= */
-.toast {
-  position: fixed;
-  bottom: 2rem;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  background: var(--dark);
-  color: var(--white);
-  padding: 0.7rem 1.25rem;
-  border-radius: 100px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  z-index: 200;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
-  border: 1px solid var(--border);
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: 1px;
   white-space: nowrap;
 }
 
-.toast.show { transform: translateX(-50%) translateY(0); }
+table.rep td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  vertical-align: middle;
+  white-space: nowrap;
+}
 
-/* ======= SECTION TITLE ======= */
+table.rep tr:hover td { background: rgba(200,169,110,0.04); }
+
+.score-bar {
+  width: 60px;
+  height: 6px;
+  background: var(--mid);
+  border-radius: 3px;
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.score-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--green);
+  transition: width .5s;
+}
+
+.merit-badge {
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.merit-5 { background: rgba(82,183,136,0.2); color: var(--green); }
+.merit-4 { background: rgba(91,141,238,0.2); color: var(--blue); }
+.merit-3 { background: rgba(200,169,110,0.2); color: var(--gold); }
+.merit-2 { background: rgba(224,145,58,0.2); color: var(--orange); }
+.merit-1 { background: rgba(224,82,82,0.2); color: var(--red); }
+
+/* ═══ FILTER ROW ═══ */
+.filter-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-row select {
+  flex: 1;
+  min-width: 120px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+/* ═══ SECTION TITLE ═══ */
 .section-title {
   font-family: 'Playfair Display', serif;
-  font-size: 1rem;
+  font-size: 20px;
   font-weight: 700;
-  color: var(--black);
-  margin-bottom: 0.75rem;
+  color: var(--text);
+  margin-bottom: 4px;
 }
 
-.empty-state {
+.section-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+/* ═══ TOAST ═══ */
+#toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--dark2);
+  border: 1px solid rgba(200,169,110,0.3);
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 13px;
+  z-index: 9999;
+  transition: transform .3s ease;
+  max-width: 320px;
   text-align: center;
-  padding: 2rem;
-  color: var(--gray);
-  font-size: 0.85rem;
+  pointer-events: none;
 }
 
-/* ======= DATE LABEL ======= */
-.date-label {
-  font-size: 0.75rem;
-  color: var(--gray);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 0.5rem;
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ═══ MODAL ═══ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
 }
 
-/* Print QR page */
-@media print {
-  body > *:not(#print-area) { display: none !important; }
-  #print-area { display: block !important; }
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--dark2);
+  border: 1px solid rgba(200,169,110,0.2);
+  border-radius: 16px;
+  padding: 24px;
+  width: 100%;
+  max-width: 400px;
 }
 
-#print-area { display: none; }
+.modal-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--gold);
+}
+
+/* ═══ PUSH NOTICE ═══ */
+.push-banner {
+  background: rgba(91,141,238,0.1);
+  border: 1px solid rgba(91,141,238,0.3);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 12px;
+  color: var(--blue);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+.now-clock {
+  font-family: 'Playfair Display', serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+}
+
+.now-date {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+
+/* ═══ SEDE BADGE ═══ */
+.sede-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.s-ott { background: rgba(200,169,110,0.15); color: var(--gold); }
+.s-san { background: rgba(91,141,238,0.15);  color: var(--blue); }
+.s-vil { background: rgba(82,183,136,0.15);  color: var(--green); }
+.s-giu { background: rgba(224,145,58,0.15);  color: var(--orange); }
+.s-alt { background: rgba(200,82,200,0.15);  color: #d97de8; }
+
+.divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 14px 0; }
+
+/* ═══ QR AREA ═══ */
+.qr-info {
+  text-align: center;
+  padding: 20px;
+  border: 2px dashed rgba(200,169,110,0.2);
+  border-radius: 10px;
+}
+.qr-icon { font-size: 48px; margin-bottom: 8px; }
+.qr-note { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+/* ═══ QR VIDEO ═══ */
+#qr-video-el {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  background: #000;
+}
+.qr-frame-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+.qr-aim {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 180px; height: 180px;
+  border: 3px solid var(--gold);
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+  pointer-events: none;
+}
+.qr-aim::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  animation: scanline 2s linear infinite;
+}
+@keyframes scanline {
+  0%   { top: 0;    opacity:1; }
+  50%  { top: 100%; opacity:0.4; }
+  100% { top: 0;    opacity:1; }
+}
+.qr-cam-label {
+  text-align:center; font-size:12px; color:var(--text-muted); margin-top:8px;
+}
+#qr-canvas-hidden { display: none; }
+
+/* ═══ SCROLL AREA ═══ */
+.scroll-area { max-height: 320px; overflow-y: auto; }
+.scroll-area::-webkit-scrollbar { width: 4px; }
+.scroll-area::-webkit-scrollbar-thumb { background: var(--mid); border-radius: 2px; }
+
+input[type=password] { letter-spacing: 3px; }
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:360px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .badge-btn { padding: 16px 6px; font-size: 12px; }
+}
 </style>
+<!-- jsQR: libreria leggera per decodifica QR da canvas, zero dipendenze server -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<!-- QRCode.js per generare QR in admin -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
-<!-- ======= LOGIN ======= -->
-<div class="screen active" id="screen-login">
-  <div class="login-deco"></div>
-  <div class="login-deco2"></div>
-  <div class="login-box">
-    <div class="brand-mark">
-      <div class="brand-icon">C</div>
-      <div class="brand-text-block">
-        <div class="brand-name">Cinquegrana</div>
-        <div class="brand-sub">Arredamenti · Scavolini</div>
-      </div>
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-circle">C</div>
+    <div>
+      <div class="logo-text">Cinquegrana</div>
+      <div class="logo-sub">Arredamenti · Scavolini</div>
     </div>
-    <div class="login-heading">Badging<br><span>Presenze</span></div>
-    <div class="login-tagline">Gestione presenze multi-sede</div>
-
-    <div class="role-tabs">
-      <button class="role-tab active" onclick="setRole('dipendente')">👤 Dipendente</button>
-      <button class="role-tab" onclick="setRole('admin')">⚙️ Amministratore</button>
-    </div>
-
-    <div id="group-dipendente">
-      <div class="input-group">
-        <label>Seleziona il tuo nome</label>
-        <div class="native-select-wrap">
-          <span id="picker-label">— Scegli —</span>
-          <span class="picker-arrow">▾</span>
-          <select id="select-dip" onchange="onSelectChange(this.value)">
-            <option value="">— Scegli —</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div id="group-admin" style="display:none">
-      <div class="input-group">
-        <label>Password amministratore</label>
-        <input type="password" id="admin-pass" placeholder="••••••••" onkeypress="if(event.key==='Enter')doLogin()">
-      </div>
-    </div>
-
-    <button class="btn-primary" onclick="doLogin()">Accedi →</button>
   </div>
-</div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('dipendente')">👤 Dipendente</button>
+    <button class="tab" onclick="switchTab('admin')">⚙️ Admin</button>
+  </div>
+</header>
 
-<!-- ======= DIPENDENTE ======= -->
-<div class="screen" id="screen-dipendente">
-  <div class="app-header">
-    <div class="header-left">
-      <div class="header-icon">C</div>
-      <div>
-        <div class="header-name" id="dip-name-header">—</div>
-        <div class="header-role" id="dip-role-header">Dipendente</div>
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- ═══════════════════════ DIPENDENTE VIEW ═══════════════════════ -->
+<div class="view active" id="view-dipendente">
+
+  <!-- SELEZIONE NOME (prima volta) -->
+  <div id="sel-nome-block">
+    <div class="card">
+      <div class="card-title">📋 Seleziona il tuo nome</div>
+      <select id="sel-nome" onchange="onNomeChange()">
+        <option value="">— Scegli —</option>
+        <!-- Ottaviano Arredatori -->
+        <optgroup label="🏠 Ottaviano — Arredatori">
+          <option value="Luigi Franzese|OTT|09:30|13:00|15:30|20:00|3">Luigi Franzese</option>
+          <option value="Mena|OTT|09:30|13:00|15:30|20:00|2">Mena</option>
+          <option value="Ciro Carfora|OTT|09:30|13:00|15:30|20:00|1,4,5">Ciro Carfora</option>
+        </optgroup>
+        <!-- Ottaviano Receptionist -->
+        <optgroup label="🏠 Ottaviano — Reception">
+          <option value="Tania|OTT|09:30|13:00|15:30|20:00|2">Tania</option>
+        </optgroup>
+        <!-- Sant'Arpino Arredatori -->
+        <optgroup label="🏠 Sant'Arpino — Arredatori">
+          <option value="Angela Cinquegrana|SAN|09:00|13:00|15:30|20:00|5">Angela Cinquegrana</option>
+          <option value="Francesca Puoti|SAN|09:00|13:00|15:30|20:00|2">Francesca Puoti</option>
+          <option value="Pietro Cerreto|SAN|09:00|13:00|15:30|20:00|3">Pietro Cerreto</option>
+          <option value="Rossella Cinquegrana|SAN|09:00|13:00|15:30|20:00|4">Rossella Cinquegrana</option>
+        </optgroup>
+        <!-- Sant'Arpino Receptionist -->
+        <optgroup label="🏠 Sant'Arpino — Reception">
+          <option value="Raffaella|SAN|09:00|13:00|15:30|20:00|1,3,5m">Raffaella</option>
+          <option value="Maddalena|SAN|09:00|13:00|15:30|20:00|2,4,6">Maddalena</option>
+        </optgroup>
+        <!-- Villaricca Arredatori -->
+        <optgroup label="🏠 Villaricca — Arredatori">
+          <option value="Lino Guida|VIL|09:00|13:00|15:30|20:00|4">Lino Guida</option>
+          <option value="Bruno Barrella|VIL|09:00|13:00|15:30|20:00|1">Bruno Barrella</option>
+        </optgroup>
+        <!-- Villaricca Receptionist -->
+        <optgroup label="🏠 Villaricca — Reception">
+          <option value="Antonella D'Isa|VIL|09:00|13:00|15:30|20:00|6">Antonella D'Isa</option>
+          <option value="Giusy|VIL|09:00|13:00|15:30|20:00|5,4p,1m,3m">Giusy</option>
+        </optgroup>
+        <!-- Giugliano Arredatori -->
+        <optgroup label="🏠 Giugliano — Arredatori">
+          <option value="Annalisa Severino|GIU|09:00|13:00|15:30|20:00|4">Annalisa Severino</option>
+          <option value="Alessandro Esposito|GIU|09:00|13:00|15:30|20:00|5">Alessandro Esposito</option>
+          <option value="Stefania|GIU|09:00|13:00|15:30|20:00|1">Stefania</option>
+          <option value="Antonella|GIU|09:00|13:00|15:30|20:00|3">Antonella</option>
+        </optgroup>
+        <!-- Giugliano Receptionist -->
+        <optgroup label="🏠 Giugliano — Reception">
+          <option value="Annabella|GIU|09:00|13:00|15:30|20:00|2,1p,3p,5p,4m">Annabella</option>
+        </optgroup>
+        <!-- Itineranti -->
+        <optgroup label="🌍 Multi-sede — Arredatori">
+          <option value="Ida|MULTI|09:00|13:00|15:30|20:00|6">Ida</option>
+          <option value="Noemy|MULTI|09:00|13:00|15:30|20:00|">Noemy</option>
+          <option value="Sara|MULTI|09:00|13:00|15:30|20:00|">Sara</option>
+          <option value="Correale|MULTI|09:00|13:00|15:30|20:00|">Correale</option>
+          <option value="Alessandra|MULTI|09:00|13:00|15:30|20:00|">Alessandra</option>
+        </optgroup>
+        <!-- Ottaviano Altre figure -->
+        <optgroup label="🏠 Ottaviano — Altre figure">
+          <option value="Alessia|OTT|09:30|13:00|15:30|20:00|">Alessia</option>
+          <option value="Julia|OTT|09:30|13:00|15:30|20:00|">Julia</option>
+          <option value="Simona|OTT|09:30|13:00|15:30|20:00|">Simona</option>
+          <option value="Silvana|SAN|09:00|13:00|15:30|20:00|">Silvana</option>
+        </optgroup>
+      </select>
+      <div id="sel-warning" style="margin-top:10px;font-size:12px;color:var(--text-muted);display:none;">
+        ⚠️ <strong>Prima configurazione</strong><br>Il tuo nome verrà associato a questo dispositivo.
       </div>
+      <button class="btn btn-gold" style="margin-top:12px;" onclick="registraDispositivo()">✅ Conferma dispositivo</button>
     </div>
-    <button class="btn-logout" onclick="logout()">Esci</button>
   </div>
 
-  <div class="dip-content">
-    <!-- Status -->
-    <div class="card">
-      <div class="card-title">Stato attuale</div>
-      <div class="card-sub" id="dash-date-dip">—</div>
-      <div class="status-row">
-        <div class="status-big" id="current-status-text">—</div>
-        <div class="pill neutral" id="current-status-badge">—</div>
+  <!-- DIPENDENTE LOGGATO -->
+  <div id="dip-loggedIn" style="display:none;">
+
+    <div class="now-clock" id="orologio">--:--:--</div>
+    <div class="now-date" id="oggi-label">--</div>
+
+    <!-- Info dipendente -->
+    <div class="card" style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <div style="font-size:16px;font-weight:600;" id="dip-nome-display">—</div>
+          <div style="font-size:12px;color:var(--text-muted);" id="dip-sede-display">—</div>
+        </div>
+        <span id="dip-status-pill" class="pill pill-grey">● Fuori sede</span>
       </div>
-      <div class="last-scan" id="last-scan-info">Nessun badge registrato oggi</div>
+      <div style="font-size:12px;color:var(--text-muted);">
+        🕐 Turno di oggi: <strong id="turno-oggi">—</strong>
+      </div>
     </div>
 
-    <!-- Scanner -->
-    <div class="card">
-      <div class="card-title">Badia QR Code</div>
-      <div class="card-sub">Scansiona il codice QR affisso nella tua sede</div>
-      <div style="margin-top:1rem;">
-        <div class="scan-viewer" id="scan-viewer">
-          <div id="reader"></div>
+    <!-- Push Notification -->
+    <div class="push-banner" id="push-banner">
+      🔔 <strong>Attiva le notifiche</strong> per ricevere reminder del turno direttamente sul cellulare.
+      <br><button class="btn btn-blue btn-sm" style="margin-top:8px;" onclick="richiediPush()">Attiva notifiche push</button>
+    </div>
+
+    <!-- Badge buttons -->
+    <div class="btn-row" style="margin-bottom:14px;">
+      <button class="badge-btn entry" id="btn-entrata" onclick="badgeEntrata()">
+        <span class="icon">🟢</span>Entrata
+      </button>
+      <button class="badge-btn exit" id="btn-uscita" onclick="badgeUscita()">
+        <span class="icon">🔴</span>Uscita
+      </button>
+    </div>
+
+    <!-- QR SCANNER -->
+    <div class="card" id="qr-card">
+      <div class="card-title">📷 Scansiona QR sede</div>
+
+      <!-- Idle -->
+      <div id="qr-idle">
+        <div class="qr-info" style="padding:16px 10px;">
+          <div class="qr-icon">📱</div>
+          <div class="qr-note" style="margin-bottom:14px;">Premi il pulsante e inquadra il QR Code affisso nella tua sede per registrare entrata o uscita.</div>
+          <button class="btn btn-gold" onclick="avviaScanner()">📷 Avvia fotocamera</button>
+          <button class="btn btn-outline" style="margin-top:8px;font-size:13px;" onclick="simulaBadge()">🎯 Simula badge (demo)</button>
         </div>
-        <button class="btn-scan" id="btn-scan" onclick="toggleScanner()">📷 Avvia fotocamera</button>
-        <button class="btn-demo" onclick="demoScan()">🎯 Simula scansione (demo)</button>
-        <div style="margin-top:0.75rem;padding:0.65rem 0.85rem;background:#FFF8E1;border-radius:8px;font-size:0.75rem;color:#7A6000;line-height:1.5;">
-          📍 <strong>Verifica GPS attiva</strong> — Il badge viene registrato solo se sei fisicamente nella sede (raggio 100m). Assicurati di autorizzare la posizione quando richiesto.
+      </div>
+
+      <!-- Scanner attivo -->
+      <div id="qr-scanning" style="display:none;">
+        <div class="qr-frame-wrap">
+          <video id="qr-video-el" autoplay playsinline muted></video>
+          <div class="qr-aim"></div>
         </div>
+        <canvas id="qr-canvas-hidden"></canvas>
+        <div class="qr-cam-label" id="qr-cam-status">Inquadra il QR Code della sede…</div>
+        <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="fermaScanner()">✕ Annulla</button>
+      </div>
+
+      <!-- Successo -->
+      <div id="qr-success" style="display:none;text-align:center;padding:16px;">
+        <div style="font-size:40px;margin-bottom:8px;">✅</div>
+        <div id="qr-success-msg" style="font-size:15px;font-weight:600;color:var(--green);"></div>
+        <div id="qr-success-sub" style="font-size:12px;color:var(--text-muted);margin-top:4px;"></div>
+        <button class="btn btn-outline" style="margin-top:14px;font-size:13px;" onclick="resetScanner()">Scansiona di nuovo</button>
+      </div>
+
+      <!-- Errore -->
+      <div id="qr-error" style="display:none;text-align:center;padding:16px;">
+        <div style="font-size:36px;margin-bottom:8px;">⚠️</div>
+        <div id="qr-error-msg" style="font-size:13px;color:var(--red);white-space:pre-line;"></div>
+        <button class="btn btn-outline" style="margin-top:14px;font-size:13px;" onclick="resetScanner()">Riprova</button>
       </div>
     </div>
 
     <!-- Storico -->
+    <div class="card" style="margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div class="card-title" style="margin:0;">📋 Storico oggi</div>
+        <span id="n-badge-oggi" style="font-size:12px;color:var(--text-muted);">0 badge</span>
+      </div>
+      <ul class="timeline" id="storico-lista">
+        <li><span class="tl-dot tl-orange"></span><span style="font-size:13px;color:var(--text-muted);">Nessun badge registrato</span></li>
+      </ul>
+    </div>
+
+    <button class="btn btn-outline" style="margin-top:12px;font-size:12px;" onclick="resetDispositivo()">🔄 Non sei tu? Reimposta dispositivo</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════ ADMIN VIEW ═══════════════════════ -->
+<div class="view" id="view-admin">
+
+  <!-- Login -->
+  <div id="admin-login">
     <div class="card">
-      <div class="card-title">Storico badge</div>
-      <div id="dip-history" style="margin-top:0.75rem;">
-        <div class="empty-state">Nessun badge registrato</div>
-      </div>
+      <div class="section-title">Pannello Admin</div>
+      <div class="section-sub">Cinquegrana · Accesso riservato</div>
+      <input type="password" id="admin-pwd" placeholder="Password amministratore" style="margin-bottom:10px;">
+      <button class="btn btn-gold" onclick="adminLogin()">Accedi →</button>
     </div>
   </div>
-</div>
 
-<!-- ======= ADMIN DASHBOARD ======= -->
-<div class="screen" id="screen-dashboard">
-  <div class="app-header">
-    <div class="header-left">
-      <div class="header-icon">C</div>
+  <!-- Dashboard Admin -->
+  <div id="admin-dashboard" style="display:none;">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
       <div>
-        <div class="header-name">Pannello Admin</div>
-        <div class="header-role">Arredamenti Cinquegrana</div>
+        <div class="section-title">Pannello Admin</div>
+        <div class="section-sub" id="admin-now">—</div>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="adminLogout()">Esci</button>
+    </div>
+
+    <!-- SUB TABS -->
+    <div class="tabs" style="margin-bottom:16px;">
+      <button class="tab active" onclick="adminTab('presenze')">📊 Presenze</button>
+      <button class="tab" onclick="adminTab('alert')">🔴 Alert</button>
+      <button class="tab" onclick="adminTab('report')">📈 Report</button>
+      <button class="tab" onclick="adminTab('tools')">🛠️ Tools</button>
+    </div>
+
+    <!-- PRESENZE -->
+    <div id="at-presenze" class="admin-tab-content">
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-num" id="s-presenti" style="color:var(--green)">0</div>
+          <div class="stat-label">Presenti</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="s-alert" style="color:var(--red)">0</div>
+          <div class="stat-label">Alert</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="s-badge" style="color:var(--gold)">0</div>
+          <div class="stat-label">Badge oggi</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="card-title" style="margin:0;">Dipendenti oggi</div>
+          <button class="btn btn-gold btn-sm" onclick="refreshAdmin()">↻ Aggiorna</button>
+        </div>
+        <div class="scroll-area" id="lista-dipendenti-oggi"></div>
       </div>
     </div>
-    <button class="btn-logout" onclick="logout()">Esci</button>
-  </div>
 
-  <div class="admin-tabs">
-    <button class="admin-tab active" onclick="switchAdminTab('presenze')">📊 Presenze</button>
-    <button class="admin-tab" onclick="switchAdminTab('qr')">📱 QR Code</button>
-    <button class="admin-tab" onclick="switchAdminTab('export')">📥 Export</button>
-  </div>
-
-  <!-- TAB PRESENZE -->
-  <div class="admin-panel active" id="tab-presenze">
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-num" id="stat-presenti">0</div>
-        <div class="stat-label">Presenti ora</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-num" id="stat-oggi">0</div>
-        <div class="stat-label">Badge oggi</div>
+    <!-- ALERT -->
+    <div id="at-alert" class="admin-tab-content" style="display:none;">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div class="card-title" style="margin:0;">🔴 Alert attivi</div>
+          <div>
+            <button class="btn btn-outline btn-sm" onclick="richiediPushAdmin()" style="margin-right:6px;">🔔 Attiva push</button>
+          </div>
+        </div>
+        <div class="push-banner" style="font-size:11px;">
+          📱 Per ricevere gli alert su cellulare: clicca "Attiva push" e tieni questa pagina aperta nel browser del tuo telefono.
+        </div>
+        <div id="lista-alert"></div>
       </div>
     </div>
 
-    <div class="date-label" id="dash-date">—</div>
+    <!-- REPORT -->
+    <div id="at-report" class="admin-tab-content" style="display:none;">
+      <div class="card">
+        <div class="card-title">📈 Report statistiche dipendenti</div>
 
-    <div class="chips" id="chips-sedi"></div>
+        <div class="filter-row">
+          <select id="rep-periodo" onchange="buildReport()">
+            <option value="oggi">Oggi</option>
+            <option value="settimana">Ultimi 7 giorni</option>
+            <option value="mese" selected>Ultimo mese</option>
+            <option value="tutto">Tutto lo storico</option>
+          </select>
+          <select id="rep-sede" onchange="buildReport()">
+            <option value="">Tutte le sedi</option>
+            <option value="OTT">Ottaviano</option>
+            <option value="SAN">Sant'Arpino</option>
+            <option value="VIL">Villaricca</option>
+            <option value="GIU">Giugliano</option>
+            <option value="MULTI">Multi-sede</option>
+          </select>
+        </div>
 
-    <div class="section-title">Dipendenti</div>
-    <div id="dip-list"></div>
-  </div>
+        <div class="filter-row">
+          <select id="rep-merito" onchange="buildReport()">
+            <option value="">Tutti</option>
+            <option value="5">⭐⭐⭐⭐⭐ Eccellenti</option>
+            <option value="4">⭐⭐⭐⭐ Ottimi</option>
+            <option value="3">⭐⭐⭐ Nella media</option>
+            <option value="2">⭐⭐ Da migliorare</option>
+            <option value="1">⭐ Critici</option>
+          </select>
+          <select id="rep-sort" onchange="buildReport()">
+            <option value="score-desc">Miglior punteggio</option>
+            <option value="score-asc">Peggior punteggio</option>
+            <option value="nome">Nome A→Z</option>
+            <option value="ritardi-desc">Più ritardi</option>
+            <option value="assenze-desc">Più assenze</option>
+          </select>
+        </div>
 
-  <!-- TAB QR -->
-  <div class="admin-panel" id="tab-qr">
-    <div class="qr-intro">
-      <strong>Come funziona:</strong> stampa i QR code qui sotto e affiggili in ogni sede. I dipendenti li scansionano per registrare entrata e uscita. Ogni QR code è univoco per sede e registra automaticamente luogo, data e ora.
+        <div class="report-wrap" id="report-table-wrap">
+          <table class="rep" id="report-table">
+            <thead>
+              <tr>
+                <th>Dipendente</th>
+                <th>Sede</th>
+                <th>Pres.</th>
+                <th>Ritardi</th>
+                <th>Ass.</th>
+                <th>Uscite ant.</th>
+                <th>Score</th>
+                <th>Merito</th>
+              </tr>
+            </thead>
+            <tbody id="report-tbody"></tbody>
+          </table>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">
+          <button class="btn btn-gold btn-sm" onclick="esportaCSV()">⬇ Scarica CSV</button>
+          <button class="btn btn-outline btn-sm" onclick="esportaExcel()">📊 Esporta Excel</button>
+          <button class="btn btn-outline btn-sm" onclick="esportaPDF()">📄 Esporta PDF</button>
+        </div>
+      </div>
     </div>
-    <div class="qr-grid" id="qr-grid"></div>
-  </div>
 
-  <!-- TAB EXPORT -->
-  <div class="admin-panel" id="tab-export">
-    <div class="export-card">
-      <h3>📊 Export CSV presenze</h3>
-      <p>Scarica il registro completo delle presenze in formato CSV. Include nome, sede, tipo (entrata/uscita), ora e data per ogni badge registrato.</p>
-      <button class="btn-export" onclick="exportCSV()">⬇ Scarica CSV</button>
+    <!-- TOOLS -->
+    <div id="at-tools" class="admin-tab-content" style="display:none;">
+      <div class="card">
+        <div class="card-title">🗑 Reset presenze</div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Cancella tutti i badge della giornata. Usare a inizio giornata.</p>
+        <button class="btn btn-red" onclick="resetGiornata()">Reset giornata</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔓 Sblocca dispositivo dipendente</div>
+        <input type="text" id="sblocca-nome" placeholder="Nome dipendente" style="margin-bottom:8px;">
+        <button class="btn btn-outline" onclick="sbloccaDispositivo()">Sblocca</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">📱 Genera QR Code sedi</div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Genera e stampa i QR da affiggere in ogni sede. I dipendenti li scansionano per timbrare.</p>
+        <div id="qr-gen-area"></div>
+        <button class="btn btn-gold" style="margin-top:10px;" onclick="generaQRSedi()">🖨 Genera QR da stampare</button>
+      </div>
+
+
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Crea 30 giorni di badge fittizi per testare il report merito.</p>
+        <button class="btn btn-blue" onclick="generaDemo()">Genera dati demo</button>
+      </div>
     </div>
 
-    <div class="export-card">
-      <h3>👀 Anteprima dati</h3>
-      <p>Riepilogo dei badge registrati nella sessione corrente.</p>
-      <div class="export-preview" id="export-preview">Nessun dato disponibile.</div>
-    </div>
-
-    <div class="export-card">
-      <h3>🗑 Reset presenze</h3>
-      <p>Cancella tutti i badge registrati e ripristina lo stato iniziale. Usa questa funzione a inizio giornata.</p>
-      <button class="btn-reset" onclick="resetPresenze()">Reset giornata</button>
-    </div>
   </div>
 </div>
 
-<!-- MODAL DIPENDENTE -->
-<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
-  <div class="modal-sheet">
-    <div class="modal-handle"></div>
-    <div class="modal-dip-name" id="modal-name">—</div>
-    <div class="modal-dip-role" id="modal-role">—</div>
-    <div id="modal-logs"></div>
-    <button class="btn-close" onclick="closeModal()">Chiudi</button>
-  </div>
-</div>
-
-<!-- TOAST -->
-<div class="toast" id="toast">
-  <span id="toast-icon">✅</span>
-  <span id="toast-msg">—</span>
-</div>
-
-<!-- PRINT AREA -->
-<div id="print-area"></div>
-
+<!-- ═══ SCRIPT ═══ -->
 <script>
-// ========== DATI REALI ==========
-const SEDI = {
-  'SANTARPINO':   { nome: "Sant'Arpino",   indirizzo: "Sant'Arpino (CE)",             lat: 40.9495420, lng: 14.2532662 },
-  'GIUGLIANO':    { nome: 'Giugliano',     indirizzo: 'Giugliano in Campania (NA)',   lat: 40.9435092, lng: 14.2168761 },
-  'VILLARICCA':   { nome: 'Villaricca',    indirizzo: 'Villaricca (NA)',               lat: 40.9186364, lng: 14.1845289 },
-  'OTTAVIANO':    { nome: 'Ottaviano',     indirizzo: 'Ottaviano (NA)',                lat: 40.8595950, lng: 14.4733764 },
-  'DEPOSITOZEUS': { nome: 'Deposito Zeus', indirizzo: 'Deposito Zeus',                lat: 40.9443205, lng: 14.2211218 }
-};
-const GEO_RAGGIO_METRI = 100;
 
+// ═══════════════════════════════════════════════════════
+// DATI DIPENDENTI
+// ═══════════════════════════════════════════════════════
+
+// giorni_riposo: 1=LUN,2=MAR,3=MER,4=GIO,5=VEN,6=SAB,0=DOM
+// "p" = solo pomeriggio libero, "m" = solo mattina libera
 const DIPENDENTI = [
-  // Sant'Arpino
-  { id: 1,  nome: 'Rossella Cinquegrana', ruolo: 'Addetta Vendite',     sede: "Sant'Arpino" },
-  { id: 2,  nome: 'Angela Cinquegrana',   ruolo: 'Addetta Vendite',     sede: "Sant'Arpino" },
-  { id: 3,  nome: 'Francesca Puoti',      ruolo: 'Addetta Vendite',     sede: "Sant'Arpino" },
-  { id: 4,  nome: 'Pietro Cerreto',       ruolo: 'Addetto Vendite',     sede: "Sant'Arpino" },
-  // Giugliano
-  { id: 5,  nome: 'Stefania Ciardulli',   ruolo: 'Addetta Vendite',     sede: 'Giugliano' },
-  { id: 6,  nome: 'Alessandro Esposito',  ruolo: 'Addetto Vendite',     sede: 'Giugliano' },
-  { id: 7,  nome: 'Annalisa Severino',    ruolo: 'Addetta Vendite',     sede: 'Giugliano' },
-  { id: 8,  nome: "Antonella D'Isa",      ruolo: 'Addetta Vendite',     sede: 'Giugliano' },
-  // Villaricca
-  { id: 9,  nome: 'Lino Guida',           ruolo: 'Addetto Vendite',     sede: 'Villaricca' },
-  { id: 10, nome: 'Bruno Barrella',        ruolo: 'Addetto Vendite',     sede: 'Villaricca' },
-  // Ottaviano
-  { id: 11, nome: 'Ciro Carfora',          ruolo: 'Addetto Vendite',     sede: 'Ottaviano' },
-  { id: 12, nome: 'Filomena Carfora',      ruolo: 'Addetta Vendite',     sede: 'Ottaviano' },
-  { id: 13, nome: 'Luigi Franzese',        ruolo: 'Addetto Vendite',     sede: 'Ottaviano' },
-  // Deposito Zeus
-  { id: 14, nome: 'Simona',               ruolo: 'Operativa',           sede: 'Deposito Zeus' },
-  { id: 15, nome: 'Silvana',              ruolo: 'Operativa',           sede: 'Deposito Zeus' },
-  { id: 16, nome: 'Sara',                 ruolo: 'Operativa',           sede: 'Deposito Zeus' },
-  { id: 17, nome: 'Correale',             ruolo: 'Operativo',           sede: 'Deposito Zeus' },
-  { id: 18, nome: 'Alessandra',           ruolo: 'Operativa',           sede: 'Deposito Zeus' },
+  // OTTAVIANO
+  { id:'luigi',   nome:'Luigi Franzese',     sede:'OTT', tipo:'Arredatore FT',     mat_in:'09:30', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[3] },
+  { id:'mena',    nome:'Mena',               sede:'OTT', tipo:'Arredatrice FT',    mat_in:'09:30', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[2] },
+  { id:'ciro',    nome:'Ciro Carfora',       sede:'OTT', tipo:'Arredatore PT',     mat_in:'09:30', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[1,4,5] },
+  { id:'tania',   nome:'Tania',              sede:'OTT', tipo:'Receptionist PT',   mat_in:'09:30', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[2] },
+  { id:'alessia', nome:'Alessia',            sede:'OTT', tipo:'',                  mat_in:'09:30', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[] },
+  { id:'julia',   nome:'Julia',              sede:'OTT', tipo:'',                  mat_in:'09:30', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[] },
+  { id:'simona',  nome:'Simona',             sede:'OTT', tipo:'',                  mat_in:'09:30', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[] },
+  // SANT'ARPINO
+  { id:'angela',    nome:'Angela Cinquegrana', sede:'SAN', tipo:'Arredatrice FT',  mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[5] },
+  { id:'francesca', nome:'Francesca Puoti',    sede:'SAN', tipo:'Arredatrice FT',  mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[2] },
+  { id:'pietro',    nome:'Pietro Cerreto',     sede:'SAN', tipo:'Arredatore FT',   mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[3] },
+  { id:'rossella',  nome:'Rossella Cinquegrana',sede:'SAN',tipo:'Arredatrice PT',  mat_in:null,    mat_out:null,   pom_in:'15:30', pom_out:'20:00', riposo:[4], solo_pom:true },
+  { id:'raffaella', nome:'Raffaella',           sede:'SAN', tipo:'Receptionist PT', mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[1,3], riposo_mat:[5] },
+  { id:'maddalena', nome:'Maddalena',           sede:'SAN', tipo:'Receptionist PT', mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[2,4,6] },
+  { id:'silvana',   nome:'Silvana',             sede:'SAN', tipo:'',                mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[] },
+  // VILLARICCA
+  { id:'lino',      nome:'Lino Guida',          sede:'VIL', tipo:'Arredatore FT',   mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[4] },
+  { id:'bruno',     nome:'Bruno Barrella',       sede:'VIL', tipo:'Arredatore FT',   mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[1] },
+  { id:'antonellaDisa',nome:"Antonella D'Isa",   sede:'VIL', tipo:'Receptionist FT', mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[6] },
+  { id:'giusy',     nome:'Giusy',                sede:'VIL', tipo:'Receptionist PT', mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[5], riposo_mat:[1,3], riposo_pom:[4] },
+  // GIUGLIANO
+  { id:'annalisa',  nome:'Annalisa Severino',    sede:'GIU', tipo:'Arredatrice FT',  mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[4] },
+  { id:'alessandro',nome:'Alessandro Esposito',  sede:'GIU', tipo:'Arredatore FT',   mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[5] },
+  { id:'stefania',  nome:'Stefania',              sede:'GIU', tipo:'Arredatrice FT',  mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[1] },
+  { id:'antonellaGiu',nome:'Antonella',           sede:'GIU', tipo:'Arredatrice PT',  mat_in:null,    mat_out:null,   pom_in:'15:30', pom_out:'20:00', riposo:[3], solo_pom:true },
+  { id:'annabella', nome:'Annabella',              sede:'GIU', tipo:'Receptionist PT', mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[2], riposo_mat:[4], riposo_pom:[1,3,5] },
+  // MULTI
+  { id:'ida',       nome:'Ida',                   sede:'MULTI',tipo:'Arredatrice FT', mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[6] },
+  { id:'noemy',     nome:'Noemy',                 sede:'MULTI',tipo:'',               mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[] },
+  { id:'sara',      nome:'Sara',                  sede:'MULTI',tipo:'',               mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[] },
+  { id:'correale',  nome:'Correale',              sede:'MULTI',tipo:'',               mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[] },
+  { id:'alessandra',nome:'Alessandra',            sede:'MULTI',tipo:'',               mat_in:'09:00', mat_out:'13:00', pom_in:'15:30', pom_out:'20:00', riposo:[] },
 ];
 
-// ========== STATO ==========
-let presenze = {};        // { nome: { status, logs: [{tipo, sede, ora, data}] } }
-let currentUser = null;
-let currentRole = 'dipendente';
-let scanner = null;
-let scannerRunning = false;
-const ADMIN_PASS = 'cinquegrana2026';
-const STORAGE_KEY = 'cinquegrana_presenze';
+const SEDE_LABEL = { OTT:"Ottaviano", SAN:"Sant'Arpino", VIL:"Villaricca", GIU:"Giugliano", MULTI:"Multi-sede" };
+const SEDE_CLASS  = { OTT:'s-ott', SAN:'s-san', VIL:'s-vil', GIU:'s-giu', MULTI:'s-alt' };
+const GIORNI = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+const MESI = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+const ADMIN_PWD = 'Cinquegrana2025!';
+let pushSub = null;
+let alertInterval = null;
 
-// ========== INIT ==========
-function init() {
-  // Carica da localStorage
-  const saved = localStorage.getItem(STORAGE_KEY);
-  if (saved) {
-    presenze = JSON.parse(saved);
-    // aggiunge eventuali nuovi dipendenti
-    DIPENDENTI.forEach(d => {
-      if (!presenze[d.nome]) presenze[d.nome] = { status: 'out', logs: [] };
-    });
-  } else {
-    DIPENDENTI.forEach(d => {
-      presenze[d.nome] = { status: 'out', logs: [] };
-    });
+// ═══════════════════════════════════════════════════════
+// STORAGE HELPERS
+// ═══════════════════════════════════════════════════════
+function getData(k, def=null) {
+  try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch { return def; }
+}
+function setData(k, v) {
+  try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+}
+
+function getTodayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function getBadgeKey(nomeId, data) {
+  return `badge_${nomeId}_${data || getTodayKey()}`;
+}
+
+function getAllKeys() {
+  const keys = [];
+  for (let i=0; i<localStorage.length; i++) {
+    keys.push(localStorage.key(i));
   }
-
-  // Popola select nativo raggruppato per sede
-  const sediOrdine = ["Sant'Arpino", 'Giugliano', 'Villaricca', 'Ottaviano', 'Deposito Zeus'];
-  const sel = document.getElementById('select-dip');
-  sediOrdine.forEach(sede => {
-    const dipSede = DIPENDENTI.filter(d => d.sede === sede);
-    if (!dipSede.length) return;
-    const og = document.createElement('optgroup');
-    og.label = sede;
-    dipSede.forEach(d => {
-      const opt = document.createElement('option');
-      opt.value = d.nome;
-      opt.textContent = d.nome;
-      og.appendChild(opt);
-    });
-    sel.appendChild(og);
-  });
-
-  // Genera QR nell'admin
-  buildQRCards();
-
-  // Chips sedi
-  buildChips();
+  return keys;
 }
 
-function saveStorage() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(presenze));
-}
-
-// ========== SELECT NATIVO ==========
-let selectedDipendente = '';
-
-function onSelectChange(val) {
-  selectedDipendente = val;
-  document.getElementById('picker-label').textContent = val || '— Scegli —';
-  const wrap = document.querySelector('.native-select-wrap');
-  wrap.classList.toggle('chosen', !!val);
-}
-
-
-function setRole(role) {
-  currentRole = role;
-  document.querySelectorAll('.role-tab').forEach((t, i) => {
-    t.classList.toggle('active', (i === 0 && role === 'dipendente') || (i === 1 && role === 'admin'));
-  });
-  document.getElementById('group-dipendente').style.display = role === 'dipendente' ? 'block' : 'none';
-  document.getElementById('group-admin').style.display = role === 'admin' ? 'block' : 'none';
-}
-
-function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-function showToast(msg, icon = '✅') {
-  document.getElementById('toast-msg').textContent = msg;
-  document.getElementById('toast-icon').textContent = icon;
-  const t = document.getElementById('toast');
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function initials(nome) {
-  return nome.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
-}
-
-function todayStr() {
-  return new Date().toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' });
-}
-
-// ========== LOGIN ==========
-function doLogin() {
-  if (currentRole === 'dipendente') {
-    const sel = selectedDipendente;
-    if (!sel) return showToast('Seleziona il tuo nome', '⚠️');
-    currentUser = sel;
-    const dip = DIPENDENTI.find(d => d.nome === sel);
-    document.getElementById('dip-name-header').textContent = sel;
-    document.getElementById('dip-role-header').textContent = dip ? dip.ruolo + ' · ' + dip.sede : '';
-    document.getElementById('dash-date-dip').textContent = new Date().toLocaleDateString('it-IT', {
-      weekday:'long', day:'numeric', month:'long', year:'numeric'
-    });
-    renderDipendente();
-    showScreen('screen-dipendente');
-  } else {
-    const pass = document.getElementById('admin-pass').value;
-    if (pass !== ADMIN_PASS) return showToast('Password errata', '❌');
-    renderDashboard();
-    showScreen('screen-dashboard');
-  }
-}
-
-function logout() {
-  stopScanner();
-  currentUser = null;
-  document.getElementById('admin-pass').value = '';
-  selectedDipendente = '';
-  document.getElementById('picker-label').textContent = '— Scegli —';
-  document.querySelector('.native-select-wrap').classList.remove('chosen');
-  document.getElementById('select-dip').value = '';
-  document.querySelectorAll('.picker-item').forEach(i => i.classList.remove('selected'));
-  showScreen('screen-login');
-}
-
-// ========== SCANNER ==========
-async function toggleScanner() {
-  scannerRunning ? stopScanner() : startScanner();
-}
-
-async function startScanner() {
-  const viewer = document.getElementById('scan-viewer');
-  viewer.classList.add('open');
-  document.getElementById('btn-scan').textContent = '⏹ Ferma fotocamera';
-
-  scanner = new Html5Qrcode('reader');
-  try {
-    await scanner.start(
-      { facingMode: 'environment' },
-      { fps: 10, qrbox: { width: 200, height: 200 } },
-      onScanSuccess, () => {}
-    );
-    scannerRunning = true;
-  } catch(e) {
-    showToast('Fotocamera non disponibile', '❌');
-    stopScanner();
-  }
-}
-
-function stopScanner() {
-  if (scanner && scannerRunning) {
-    scanner.stop().catch(() => {});
-    scannerRunning = false;
-  }
-  document.getElementById('scan-viewer').classList.remove('open');
-  document.getElementById('btn-scan').textContent = '📷 Avvia fotocamera';
-}
-
-// ========== GEOLOCALIZZAZIONE ==========
-function distanzaMetri(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2)**2 +
-            Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-            Math.sin(dLng/2)**2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-function onScanSuccess(text) {
-  stopScanner();
-  const sede = SEDI[text];
-  if (!sede) return showToast('QR non riconosciuto', '❌');
-
-  // Verifica posizione GPS prima di registrare
-  showToast('Verifica posizione GPS…', '📍');
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const dist = distanzaMetri(pos.coords.latitude, pos.coords.longitude, sede.lat, sede.lng);
-      if (dist <= GEO_RAGGIO_METRI) {
-        registraBadge(currentUser, sede.nome, Math.round(dist));
-      } else {
-        showToast(`Sei a ${Math.round(dist)}m dalla sede — badge rifiutato`, '🚫');
-      }
-    },
-    () => {
-      showToast('GPS non disponibile — badge non registrato', '🚫');
-    },
-    { enableHighAccuracy: true, timeout: 10000 }
-  );
-}
-
-function demoScan() {
-  // Solo per test: simula badge senza controllo GPS
-  const keys = Object.keys(SEDI);
-  const key = keys[Math.floor(Math.random() * keys.length)];
-  registraBadge(currentUser, SEDI[key].nome, 0);
-}
-
-// ========== BADGE ==========
-function registraBadge(nome, sede, distMetri = null) {
+// ═══════════════════════════════════════════════════════
+// OROLOGIO
+// ═══════════════════════════════════════════════════════
+function updateClock() {
   const now = new Date();
-  const ora = now.toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit' });
-  const data = todayStr();
-  const p = presenze[nome];
-  const isEntrata = p.status === 'out';
+  const el = document.getElementById('orologio');
+  if (el) el.textContent = now.toLocaleTimeString('it-IT');
+  const el2 = document.getElementById('oggi-label');
+  if (el2) el2.textContent = `${GIORNI[now.getDay()]} ${now.getDate()} ${MESI[now.getMonth()]} ${now.getFullYear()}`;
+  const el3 = document.getElementById('admin-now');
+  if (el3) el3.textContent = now.toLocaleString('it-IT');
+}
+setInterval(updateClock, 1000);
+updateClock();
 
-  p.status = isEntrata ? 'in' : 'out';
-  p.logs.unshift({ tipo: isEntrata ? 'in' : 'out', sede, ora, data, dist: distMetri });
-  saveStorage();
-
-  const geoTag = distMetri !== null && distMetri > 0 ? ` · 📍${distMetri}m` : '';
-  showToast(isEntrata ? `✅ Entrata – ${sede}${geoTag}` : `👋 Uscita – ${sede}${geoTag}`);
-  renderDipendente();
+// ═══════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════
+function switchTab(t) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-'+t).classList.add('active');
+  document.querySelectorAll('.tab').forEach((b,i) => {
+    b.classList.toggle('active', (t==='dipendente' && i===0) || (t==='admin' && i===1));
+  });
 }
 
-// ========== RENDER DIPENDENTE ==========
-function renderDipendente() {
-  const p = presenze[currentUser];
-  const isIn = p.status === 'in';
+// ═══════════════════════════════════════════════════════
+// DIPENDENTE — SELEZIONE
+// ═══════════════════════════════════════════════════════
+function onNomeChange() {
+  const v = document.getElementById('sel-nome').value;
+  document.getElementById('sel-warning').style.display = v ? 'block' : 'none';
+}
 
-  document.getElementById('current-status-text').textContent = isIn ? 'In servizio' : 'Fuori sede';
-  const badge = document.getElementById('current-status-badge');
-  badge.className = 'pill ' + (isIn ? 'in' : 'out');
-  badge.textContent = isIn ? 'Presente' : 'Non in servizio';
+function registraDispositivo() {
+  const val = document.getElementById('sel-nome').value;
+  if (!val) { toast('Seleziona il tuo nome'); return; }
+  setData('dipendente_corrente', val);
+  initDipendente();
+}
 
-  const last = p.logs[0];
-  document.getElementById('last-scan-info').textContent = last
-    ? `Ultimo badge: ${last.tipo === 'in' ? 'Entrata' : 'Uscita'} alle ${last.ora} — ${last.sede}`
-    : 'Nessun badge registrato oggi';
+function resetDispositivo() {
+  if (!confirm('Sei sicuro di voler resettare il dispositivo?')) return;
+  localStorage.removeItem('dipendente_corrente');
+  document.getElementById('dip-loggedIn').style.display = 'none';
+  document.getElementById('sel-nome-block').style.display = 'block';
+  document.getElementById('sel-nome').value = '';
+  document.getElementById('sel-warning').style.display = 'none';
+}
 
-  const hist = document.getElementById('dip-history');
-  if (!p.logs.length) {
-    hist.innerHTML = '<div class="empty-state">Nessun badge registrato</div>';
+function parseDipendente(val) {
+  // val = "Nome|SEDE|mat_in|mat_out|pom_in|pom_out|riposo_indices"
+  const parts = val.split('|');
+  return {
+    nomeRaw: parts[0] || '',
+    sede: parts[1] || 'OTT',
+    mat_in: parts[2] || '09:00',
+    mat_out: parts[3] || '13:00',
+    pom_in: parts[4] || '15:30',
+    pom_out: parts[5] || '20:00',
+    riposoCodes: parts[6] || ''
+  };
+}
+
+function getDipFull(val) {
+  const p = parseDipendente(val);
+  // Match in DIPENDENTI array
+  const found = DIPENDENTI.find(d => d.nome === p.nomeRaw || d.id === p.nomeRaw.toLowerCase());
+  return found || { nome: p.nomeRaw, sede: p.sede, mat_in: p.mat_in, mat_out: p.mat_out, pom_in: p.pom_in, pom_out: p.pom_out, riposo:[] };
+}
+
+function initDipendente() {
+  const val = getData('dipendente_corrente');
+  if (!val) {
+    document.getElementById('sel-nome-block').style.display = 'block';
+    document.getElementById('dip-loggedIn').style.display = 'none';
     return;
   }
-  hist.innerHTML = p.logs.map(l => `
-    <div class="hist-item">
-      <div class="hist-dot ${l.tipo}"></div>
-      <div>
-        <div class="hist-label">${l.tipo === 'in' ? 'Entrata' : 'Uscita'}</div>
-        <div class="hist-loc">${l.sede}${l.dist != null ? ` · 📍${l.dist}m` : ''}</div>
-      </div>
-      <div style="margin-left:auto;text-align:right">
-        <div class="hist-time">${l.ora}</div>
-        <div class="hist-date">${l.data}</div>
-      </div>
-    </div>
-  `).join('');
+  document.getElementById('sel-nome-block').style.display = 'none';
+  document.getElementById('dip-loggedIn').style.display = 'block';
+
+  const dip = getDipFull(val);
+  document.getElementById('dip-nome-display').textContent = dip.nome;
+  document.getElementById('dip-sede-display').textContent = `${SEDE_LABEL[dip.sede] || dip.sede} · ${dip.tipo||''}`;
+
+  aggiornaStatusDip(dip);
+  mostraStorico(dip);
+
+  // Check push already granted
+  if (Notification.permission === 'granted') {
+    document.getElementById('push-banner').style.display = 'none';
+  }
 }
 
-// ========== RENDER DASHBOARD ==========
-function renderDashboard() {
+// ═══════════════════════════════════════════════════════
+// TURNO DI OGGI
+// ═══════════════════════════════════════════════════════
+function getTurnoOggi(dip) {
+  const today = new Date().getDay(); // 0=dom
+  const riposo = dip.riposo || [];
+  const ripMat = dip.riposo_mat || [];
+  const ripPom = dip.riposo_pom || [];
+
+  if (riposo.includes(today)) return null; // giorno di riposo
+
+  const hasMat = !dip.solo_pom && dip.mat_in && !ripMat.includes(today);
+  const hasPom = dip.pom_in && !ripPom.includes(today);
+
+  if (!hasMat && !hasPom) return null;
+  if (hasMat && hasPom) return `${dip.mat_in}–${dip.mat_out} | ${dip.pom_in}–${dip.pom_out}`;
+  if (hasMat) return `${dip.mat_in}–${dip.mat_out}`;
+  return `${dip.pom_in}–${dip.pom_out}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// BADGE LOGICA
+// ═══════════════════════════════════════════════════════
+function timeToMin(t) {
+  const [h,m] = t.split(':').map(Number);
+  return h*60+m;
+}
+
+function minToTime(m) {
+  return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+}
+
+function nowMin() {
+  const n = new Date();
+  return n.getHours()*60+n.getMinutes();
+}
+
+function badgeEntrata() {
+  const val = getData('dipendente_corrente');
+  if (!val) return;
+  const dip = getDipFull(val);
+  const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
+  let badges = getData(key, []);
+
   const now = new Date();
-  document.getElementById('dash-date').textContent = now.toLocaleDateString('it-IT', {
-    weekday:'long', day:'numeric', month:'long', year:'numeric'
-  });
+  const nm = nowMin();
+  const record = { tipo:'entrata', ts: now.getTime(), ore: now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) };
 
-  const presenti = Object.values(presenze).filter(p => p.status === 'in').length;
-  const totaleBadge = Object.values(presenze).reduce((s, p) => s + p.logs.length, 0);
+  // Determina se in ritardo
+  const today = now.getDay();
+  const hasMat = !dip.solo_pom && dip.mat_in && !(dip.riposo_mat||[]).includes(today);
+  const hasPom = dip.pom_in && !(dip.riposo_pom||[]).includes(today);
 
-  document.getElementById('stat-presenti').textContent = presenti;
-  document.getElementById('stat-oggi').textContent = totaleBadge;
+  let ritardo = false;
+  let minutiRitardo = 0;
+  if (hasMat) {
+    const scadMat = timeToMin(dip.mat_in);
+    if (nm > scadMat) { ritardo = true; minutiRitardo = nm - scadMat; }
+  } else if (hasPom) {
+    const scadPom = timeToMin(dip.pom_in);
+    if (nm > scadPom) { ritardo = true; minutiRitardo = nm - scadPom; }
+  }
 
-  renderDipList('all');
-  updateExportPreview();
+  if (ritardo) {
+    record.ritardo = minutiRitardo;
+    const msg = `⚠️ ${dip.nome} ha timbrato con ${minutiRitardo} min di ritardo!`;
+    salvaAlert({ nome: dip.nome, sede: dip.sede, tipo:'ritardo', minuti: minutiRitardo, ts: now.getTime() });
+    inviaNotificaPush(msg);
+    toast(`🔴 Ritardo di ${minutiRitardo} min registrato!`);
+  } else {
+    toast(`✅ Entrata registrata alle ${record.ore}`);
+  }
+
+  badges.push(record);
+  setData(key, badges);
+  aggiornaStatusDip(dip);
+  mostraStorico(dip);
 }
 
-let currentFilter = 'all';
+function badgeUscita() {
+  const val = getData('dipendente_corrente');
+  if (!val) return;
+  const dip = getDipFull(val);
+  const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
+  let badges = getData(key, []);
 
-function buildChips() {
-  const sediNomi = ["Sant'Arpino", 'Giugliano', 'Villaricca', 'Ottaviano', 'Deposito Zeus'];
-  const container = document.getElementById('chips-sedi');
-  container.innerHTML = `<button class="chip active" onclick="filterSede('all',this)">Tutte le sedi</button>`;
-  sediNomi.forEach(s => {
-    container.innerHTML += `<button class="chip" onclick="filterSede('${s}',this)">${s}</button>`;
-  });
+  const now = new Date();
+  const nm = nowMin();
+  const record = { tipo:'uscita', ts: now.getTime(), ore: now.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) };
+
+  // Determina se uscita anticipata
+  const today = now.getDay();
+  const hasMat = !dip.solo_pom && dip.mat_in && !(dip.riposo_mat||[]).includes(today);
+  const hasPom = dip.pom_in && !(dip.riposo_pom||[]).includes(today);
+
+  let anticipo = false;
+  let minutiAnticipo = 0;
+
+  // Se è mattina (prima delle 14:00)
+  if (nm < 14*60 && hasMat) {
+    const scad = timeToMin(dip.mat_out);
+    if (nm < scad) { anticipo = true; minutiAnticipo = scad - nm; }
+  } else if (hasPom) {
+    const scad = timeToMin(dip.pom_out);
+    if (nm < scad) { anticipo = true; minutiAnticipo = scad - nm; }
+  }
+
+  if (anticipo) {
+    record.anticipo = minutiAnticipo;
+    const msg = `⚠️ ${dip.nome} è uscito ${minutiAnticipo} min prima!`;
+    salvaAlert({ nome: dip.nome, sede: dip.sede, tipo:'anticipo', minuti: minutiAnticipo, ts: now.getTime() });
+    inviaNotificaPush(msg);
+    toast(`🔴 Uscita anticipata di ${minutiAnticipo} min registrata!`);
+  } else {
+    toast(`✅ Uscita registrata alle ${record.ore}`);
+  }
+
+  badges.push(record);
+  setData(key, badges);
+  aggiornaStatusDip(dip);
+  mostraStorico(dip);
 }
 
-function filterSede(sede, btn) {
-  currentFilter = sede;
-  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-  btn.classList.add('active');
-  renderDipList(sede);
+function simulaBadge() {
+  const val = getData('dipendente_corrente');
+  if (!val) { toast('Seleziona prima il tuo nome'); return; }
+  const dip = getDipFull(val);
+  const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
+  let badges = getData(key, []);
+  const hasEntry = badges.some(b => b.tipo==='entrata');
+  if (!hasEntry) badgeEntrata(); else badgeUscita();
 }
 
-function renderDipList(filter) {
-  const filtered = filter === 'all' ? DIPENDENTI : DIPENDENTI.filter(d => d.sede === filter);
-  const list = document.getElementById('dip-list');
+function aggiornaStatusDip(dip) {
+  const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
+  const badges = getData(key, []);
+  const lastBadge = badges[badges.length-1];
+  const pill = document.getElementById('dip-status-pill');
+  const turnoEl = document.getElementById('turno-oggi');
+  const btnE = document.getElementById('btn-entrata');
+  const btnU = document.getElementById('btn-uscita');
 
-  list.innerHTML = filtered.map(d => {
-    const p = presenze[d.nome];
-    const isIn = p.status === 'in';
-    const last = p.logs[0];
-    const detail = last
-      ? `${last.tipo === 'in' ? '↗ Entrata' : '↙ Uscita'} ${last.ora} · ${last.sede}`
-      : 'Nessun badge oggi';
-    const statusClass = !p.logs.length ? 'neutral' : isIn ? 'in' : 'out';
-    const statusText  = !p.logs.length ? 'Assente' : isIn ? 'Presente' : 'Uscito';
+  const turno = getTurnoOggi(dip);
+  if (turnoEl) turnoEl.textContent = turno || 'Giorno di riposo';
 
-    return `
-      <div class="dip-card" onclick="showDipDetail('${d.nome}')">
-        <div class="dip-avatar">${initials(d.nome)}</div>
-        <div style="flex:1;min-width:0;">
-          <div class="dip-name">${d.nome}</div>
-          <div class="dip-detail">${d.ruolo} · ${d.sede}</div>
-          <div class="dip-detail" style="margin-top:2px;">${detail}</div>
-        </div>
-        <div class="pill ${statusClass}" style="flex-shrink:0;font-size:0.7rem;">${statusText}</div>
+  if (!lastBadge) {
+    pill.className = 'pill pill-grey'; pill.textContent = '● Fuori sede';
+    if(btnE) { btnE.disabled=false; btnU.disabled=true; }
+    return;
+  }
+  if (lastBadge.tipo === 'entrata') {
+    pill.className = 'pill pill-green'; pill.textContent = '● In sede';
+    if(btnE) { btnE.disabled=true; btnU.disabled=false; }
+  } else {
+    pill.className = 'pill pill-grey'; pill.textContent = '● Fuori sede';
+    if(btnE) { btnE.disabled=false; btnU.disabled=true; }
+  }
+}
+
+function mostraStorico(dip) {
+  const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
+  const badges = getData(key, []);
+  const ul = document.getElementById('storico-lista');
+  const counter = document.getElementById('n-badge-oggi');
+  if (!ul) return;
+  if (counter) counter.textContent = `${badges.length} badge`;
+  if (!badges.length) {
+    ul.innerHTML = '<li><span class="tl-dot tl-orange"></span><span style="font-size:13px;color:var(--text-muted);">Nessun badge registrato</span></li>';
+    return;
+  }
+  ul.innerHTML = badges.map(b => {
+    const isEntry = b.tipo==='entrata';
+    let note = '';
+    if (b.ritardo) note = `<div class="tl-note">⚠️ Ritardo: +${b.ritardo} min</div>`;
+    if (b.anticipo) note = `<div class="tl-note">⚠️ Uscita anticipata: -${b.anticipo} min</div>`;
+    return `<li>
+      <span class="tl-dot ${isEntry?'tl-green':'tl-red'}"></span>
+      <div style="flex:1;">
+        <div style="font-size:13px;">${isEntry?'Entrata':'Uscita'}</div>
+        ${note}
       </div>
-    `;
+      <span class="tl-time">${b.ore}</span>
+    </li>`;
   }).join('');
 }
 
-// ========== QR CARDS ==========
-function buildQRCards() {
-  const grid = document.getElementById('qr-grid');
-  grid.innerHTML = '';
+// ═══════════════════════════════════════════════════════
+// ALERT
+// ═══════════════════════════════════════════════════════
+function salvaAlert(data) {
+  const key = `alerts_${getTodayKey()}`;
+  let alerts = getData(key, []);
+  alerts.push(data);
+  setData(key, alerts);
+}
 
-  Object.entries(SEDI).forEach(([key, sede]) => {
-    const card = document.createElement('div');
-    card.className = 'qr-card';
-    card.innerHTML = `
-      <div class="qr-sede-name">${sede.nome}</div>
-      <div class="qr-box" id="qrbox-${key}"></div>
-      <div class="qr-sede-addr">${sede.indirizzo}</div>
-      <button class="btn-print-qr" onclick="printQR('${key}','${sede.nome}')">🖨 Stampa</button>
-    `;
-    grid.appendChild(card);
+function getAlertsOggi() {
+  return getData(`alerts_${getTodayKey()}`, []);
+}
 
-    setTimeout(() => {
-      new QRCode(document.getElementById(`qrbox-${key}`), {
-        text: key,
-        width: 116,
-        height: 116,
-        colorDark: '#0E0E0E',
-        colorLight: '#FFFFFF',
-        correctLevel: QRCode.CorrectLevel.H
+// ═══════════════════════════════════════════════════════
+// PUSH NOTIFICATIONS
+// ═══════════════════════════════════════════════════════
+async function richiediPush() {
+  if (!('Notification' in window)) {
+    toast('Le notifiche non sono supportate da questo browser'); return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    document.getElementById('push-banner').style.display = 'none';
+    toast('✅ Notifiche push attivate! Riceverai gli alert in tempo reale.');
+    inviaNotificaPush('✅ Notifiche attivate per Cinquegrana Badging!');
+  } else {
+    toast('⚠️ Permesso notifiche negato. Controlla le impostazioni del browser.');
+  }
+}
+
+async function richiediPushAdmin() {
+  await richiediPush();
+}
+
+function inviaNotificaPush(msg) {
+  if (Notification.permission === 'granted') {
+    new Notification('🏠 Cinquegrana Badging', { body: msg, icon: '' });
+  }
+}
+
+// Alert automatici ogni minuto per admin
+function avviaCheckAlert() {
+  if (alertInterval) clearInterval(alertInterval);
+  alertInterval = setInterval(() => {
+    checkAssenzeAlerts();
+  }, 60000);
+  checkAssenzeAlerts();
+}
+
+function checkAssenzeAlerts() {
+  const now = new Date();
+  const nm = nowMin();
+  const today = now.getDay();
+
+  DIPENDENTI.forEach(dip => {
+    if ((dip.riposo||[]).includes(today)) return; // giorno riposo
+
+    const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
+    const badges = getData(key, []);
+    const hasEntry = badges.some(b => b.tipo==='entrata');
+
+    const hasMat = !dip.solo_pom && dip.mat_in && !(dip.riposo_mat||[]).includes(today);
+    const hasPom = dip.pom_in && !(dip.riposo_pom||[]).includes(today);
+
+    // Controlla mattina: se ore > mat_in + 1 min e non c'è entrata
+    if (hasMat && nm >= timeToMin(dip.mat_in) + 1 && !hasEntry) {
+      const alertKey = `alert_sent_mat_${dip.id}_${getTodayKey()}`;
+      if (!getData(alertKey)) {
+        setData(alertKey, true);
+        salvaAlert({ nome: dip.nome, sede: dip.sede, tipo:'assenza_mat', ts: now.getTime() });
+        inviaNotificaPush(`🚨 ${dip.nome} non ha badgiato per il turno di mattina!`);
+      }
+    }
+
+    // Controlla pomeriggio
+    if (hasPom && nm >= timeToMin(dip.pom_in) + 1) {
+      // Controlla se c'è entrata pomeridiana (dopo le 14:00)
+      const hasPomEntry = badges.some(b => b.tipo==='entrata' && new Date(b.ts).getHours() >= 14);
+      const alertKey = `alert_sent_pom_${dip.id}_${getTodayKey()}`;
+      if (!hasPomEntry && !getData(alertKey)) {
+        setData(alertKey, true);
+        salvaAlert({ nome: dip.nome, sede: dip.sede, tipo:'assenza_pom', ts: now.getTime() });
+        inviaNotificaPush(`🚨 ${dip.nome} non ha badgiato per il turno di pomeriggio!`);
+      }
+    }
+  });
+
+  renderAlerts();
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN LOGIN
+// ═══════════════════════════════════════════════════════
+function adminLogin() {
+  const pwd = document.getElementById('admin-pwd').value;
+  if (pwd === ADMIN_PWD) {
+    document.getElementById('admin-login').style.display = 'none';
+    document.getElementById('admin-dashboard').style.display = 'block';
+    refreshAdmin();
+    buildReport();
+    avviaCheckAlert();
+  } else {
+    toast('❌ Password errata');
+    document.getElementById('admin-pwd').value = '';
+  }
+}
+
+function adminLogout() {
+  document.getElementById('admin-login').style.display = 'block';
+  document.getElementById('admin-dashboard').style.display = 'none';
+  document.getElementById('admin-pwd').value = '';
+  if (alertInterval) clearInterval(alertInterval);
+}
+
+function adminTab(t) {
+  document.querySelectorAll('.admin-tab-content').forEach(el => el.style.display='none');
+  document.getElementById('at-'+t).style.display = 'block';
+  document.querySelectorAll('#admin-dashboard .tabs .tab').forEach((b,i) => {
+    const tabs = ['presenze','alert','report','tools'];
+    b.classList.toggle('active', tabs[i] === t);
+  });
+  if (t==='report') buildReport();
+  if (t==='alert') renderAlerts();
+}
+
+// ═══════════════════════════════════════════════════════
+// ADMIN PRESENZE
+// ═══════════════════════════════════════════════════════
+function refreshAdmin() {
+  const now = new Date();
+  const today = now.getDay();
+  let presenti = 0, alerts = 0, totalBadge = 0;
+  let html = '';
+
+  DIPENDENTI.forEach(dip => {
+    const riposo = (dip.riposo||[]).includes(today);
+    const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
+    const badges = getData(key, []);
+    totalBadge += badges.length;
+
+    const lastBadge = badges[badges.length-1];
+    const inSede = lastBadge && lastBadge.tipo === 'entrata';
+    if (inSede) presenti++;
+
+    const hasAlert = badges.some(b => b.ritardo || b.anticipo);
+    if (hasAlert) alerts++;
+
+    const initials = dip.nome.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const statusEmoji = riposo ? '😴' : inSede ? '🟢' : badges.length ? '🔴' : '⚪';
+
+    html += `<div class="emp-row">
+      <div class="emp-avatar">${initials}</div>
+      <div style="flex:1">
+        <div class="emp-name">${dip.nome}</div>
+        <div class="emp-sede">
+          <span class="sede-tag ${SEDE_CLASS[dip.sede]||''}">${SEDE_LABEL[dip.sede]||dip.sede}</span>
+          ${riposo ? ' · Riposo' : ''}
+          ${badges.length ? ` · ${badges.length} badge` : ''}
+        </div>
+      </div>
+      <span class="emp-status">${statusEmoji}</span>
+    </div>`;
+  });
+
+  document.getElementById('s-presenti').textContent = presenti;
+  document.getElementById('s-alert').textContent = getAlertsOggi().length;
+  document.getElementById('s-badge').textContent = totalBadge;
+  document.getElementById('lista-dipendenti-oggi').innerHTML = html || '<p style="color:var(--text-muted);font-size:13px;">Nessun dato</p>';
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER ALERTS
+// ═══════════════════════════════════════════════════════
+function renderAlerts() {
+  const alerts = getAlertsOggi();
+  const el = document.getElementById('lista-alert');
+  if (!el) return;
+  if (!alerts.length) {
+    el.innerHTML = '<p style="color:var(--green);font-size:13px;padding:10px;">✅ Nessun alert attivo</p>';
+    document.getElementById('s-alert').textContent = '0';
+    return;
+  }
+  document.getElementById('s-alert').textContent = alerts.length;
+
+  const TIPO_LABEL = {
+    ritardo: 'Ritardo entrata',
+    anticipo: 'Uscita anticipata',
+    assenza_mat: 'Assente turno mattina',
+    assenza_pom: 'Assente turno pomeriggio'
+  };
+
+  el.innerHTML = alerts.map(a => {
+    const t = new Date(a.ts).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    const detail = a.minuti ? ` (${a.minuti} min)` : '';
+    return `<div class="alert-row">
+      <span class="alert-icon">🚨</span>
+      <div>
+        <div class="alert-name">${a.nome}</div>
+        <div class="alert-msg">${TIPO_LABEL[a.tipo]||a.tipo}${detail}</div>
+        <div class="alert-time">${SEDE_LABEL[a.sede]||a.sede} · ${t}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// REPORT MERITO
+// ═══════════════════════════════════════════════════════
+function buildReport() {
+  const periodo = document.getElementById('rep-periodo')?.value || 'mese';
+  const filSede = document.getElementById('rep-sede')?.value || '';
+  const filMerito = document.getElementById('rep-merito')?.value || '';
+  const sortBy = document.getElementById('rep-sort')?.value || 'score-desc';
+
+  const today = new Date();
+  let dataInizio = new Date(today);
+
+  if (periodo === 'oggi') { dataInizio = new Date(today); dataInizio.setHours(0,0,0,0); }
+  else if (periodo === 'settimana') { dataInizio.setDate(today.getDate()-7); }
+  else if (periodo === 'mese') { dataInizio.setDate(today.getDate()-30); }
+  else { dataInizio = new Date('2024-01-01'); }
+
+  // Raccogli dati per ogni dipendente
+  let rows = DIPENDENTI.map(dip => {
+    if (filSede && dip.sede !== filSede) return null;
+
+    const keys = getAllKeys().filter(k => k.startsWith(`badge_${dip.nome.replace(/\s+/g,'_').toLowerCase()}_`));
+    let presenze=0, ritardi=0, assenze=0, usciteAnt=0;
+
+    keys.forEach(k => {
+      const dateStr = k.split('_').slice(-1)[0];
+      const d = new Date(dateStr);
+      if (d < dataInizio) return;
+      const badges = getData(k, []);
+      if (!badges.length) return; // giorno lavorativo senza badge = assenza gestita separatamente
+
+      const hasEntry = badges.some(b => b.tipo==='entrata');
+      if (hasEntry) presenze++;
+
+      badges.forEach(b => {
+        if (b.ritardo) ritardi++;
+        if (b.anticipo) usciteAnt++;
       });
-    }, 100);
+    });
+
+    // Calcola giorni lavorativi nel periodo (stima)
+    let giorniLav = 0;
+    let cur = new Date(dataInizio);
+    while (cur <= today) {
+      const g = cur.getDay();
+      if (!(dip.riposo||[]).includes(g) && g !== 0) giorniLav++;
+      cur.setDate(cur.getDate()+1);
+    }
+    assenze = Math.max(0, giorniLav - presenze);
+
+    // SCORE (0-100): partenza 100, -5 per ritardo, -3 per uscita anticipata, -10 per assenza
+    const raw = 100 - (ritardi*5) - (usciteAnt*3) - (assenze*10);
+    const score = Math.max(0, Math.min(100, raw));
+
+    // Merito 1-5
+    let merito = 5;
+    if (score < 40) merito=1;
+    else if (score < 60) merito=2;
+    else if (score < 75) merito=3;
+    else if (score < 90) merito=4;
+
+    return { dip, presenze, ritardi, assenze, usciteAnt, score, merito };
+  }).filter(Boolean);
+
+  // Filtro merito
+  if (filMerito) rows = rows.filter(r => r.merito === parseInt(filMerito));
+
+  // Sort
+  if (sortBy === 'score-desc') rows.sort((a,b) => b.score-a.score);
+  else if (sortBy === 'score-asc') rows.sort((a,b) => a.score-b.score);
+  else if (sortBy === 'nome') rows.sort((a,b) => a.dip.nome.localeCompare(b.dip.nome));
+  else if (sortBy === 'ritardi-desc') rows.sort((a,b) => b.ritardi-a.ritardi);
+  else if (sortBy === 'assenze-desc') rows.sort((a,b) => b.assenze-a.assenze);
+
+  const MERITO_LABEL = ['','⭐ Critico','⭐⭐ Da migliorare','⭐⭐⭐ Medio','⭐⭐⭐⭐ Ottimo','⭐⭐⭐⭐⭐ Eccellente'];
+
+  const tbody = document.getElementById('report-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td style="font-weight:500;">${r.dip.nome}</td>
+      <td><span class="sede-tag ${SEDE_CLASS[r.dip.sede]||''}">${SEDE_LABEL[r.dip.sede]||r.dip.sede}</span></td>
+      <td style="color:var(--green)">${r.presenze}</td>
+      <td style="color:${r.ritardi>3?'var(--red)':'var(--text)'}">${r.ritardi}</td>
+      <td style="color:${r.assenze>5?'var(--red)':'var(--text)'}">${r.assenze}</td>
+      <td style="color:${r.usciteAnt>3?'var(--orange)':'var(--text)'}">${r.usciteAnt}</td>
+      <td>
+        <span class="score-bar"><span class="score-fill" style="width:${r.score}%;background:${r.score>=75?'var(--green)':r.score>=50?'var(--orange)':'var(--red)'}"></span></span>
+        <span style="font-size:11px;">${r.score}</span>
+      </td>
+      <td><span class="merit-badge merit-${r.merito}">${MERITO_LABEL[r.merito]}</span></td>
+    </tr>
+  `).join('');
+
+  window._reportRows = rows;
+}
+
+// ═══════════════════════════════════════════════════════
+// EXPORT CSV
+// ═══════════════════════════════════════════════════════
+function esportaCSV() {
+  const rows = window._reportRows || [];
+  if (!rows.length) { toast('Nessun dato da esportare'); return; }
+
+  const headers = ['Dipendente','Sede','Tipo','Presenze','Ritardi','Assenze','Uscite Anticipate','Score (0-100)','Merito'];
+  const MERITO_LABEL = ['','Critico','Da migliorare','Medio','Ottimo','Eccellente'];
+
+  const lines = [
+    headers.join(','),
+    ...rows.map(r => [
+      `"${r.dip.nome}"`,
+      SEDE_LABEL[r.dip.sede]||r.dip.sede,
+      r.dip.tipo||'',
+      r.presenze, r.ritardi, r.assenze, r.usciteAnt,
+      r.score,
+      MERITO_LABEL[r.merito]
+    ].join(','))
+  ];
+
+  const blob = new Blob([lines.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=`Cinquegrana_Report_${getTodayKey()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  toast('✅ CSV scaricato!');
+}
+
+function esportaExcel() {
+  esportaCSV();
+  toast('💡 Apri il CSV con Excel per analisi avanzate');
+}
+
+function esportaPDF() {
+  window.print();
+}
+
+// ═══════════════════════════════════════════════════════
+// TOOLS
+// ═══════════════════════════════════════════════════════
+function resetGiornata() {
+  if (!confirm('Sicuro di voler cancellare tutti i badge di oggi?')) return;
+  const today = getTodayKey();
+  getAllKeys().filter(k => k.startsWith('badge_') && k.endsWith(today)).forEach(k => localStorage.removeItem(k));
+  getAllKeys().filter(k => k.startsWith('alert_sent_') && k.endsWith(today)).forEach(k => localStorage.removeItem(k));
+  localStorage.removeItem(`alerts_${today}`);
+  toast('✅ Badge della giornata resettati');
+  refreshAdmin();
+}
+
+function sbloccaDispositivo() {
+  const nome = document.getElementById('sblocca-nome').value.trim().toLowerCase();
+  if (!nome) { toast('Inserisci il nome'); return; }
+  getAllKeys().filter(k => k === 'dipendente_corrente').forEach(k => {
+    const v = getData(k);
+    if (v && v.toLowerCase().includes(nome)) localStorage.removeItem(k);
+  });
+  toast(`✅ Dispositivo di "${nome}" sbloccato`);
+}
+
+function generaDemo() {
+  if (!confirm('Generare 30 giorni di dati demo? (sovrascriverà i dati esistenti)')) return;
+  const today = new Date();
+
+  DIPENDENTI.forEach(dip => {
+    for (let g=0; g<30; g++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - g);
+      const dayOfWeek = d.getDay();
+      if ((dip.riposo||[]).includes(dayOfWeek) || dayOfWeek===0) continue;
+
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const key = `badge_${dip.nome.replace(/\s+/g,'_').toLowerCase()}_${dateStr}`;
+
+      // 10% probabilità assenza
+      if (Math.random() < 0.10) { setData(key, []); continue; }
+
+      const badges = [];
+      const matIn = dip.mat_in ? timeToMin(dip.mat_in) : null;
+      const pomIn = dip.pom_in ? timeToMin(dip.pom_in) : null;
+      const matOut = dip.mat_out ? timeToMin(dip.mat_out) : null;
+      const pomOut = dip.pom_out ? timeToMin(dip.pom_out) : null;
+
+      const hasMat = !dip.solo_pom && matIn && !(dip.riposo_mat||[]).includes(dayOfWeek);
+      const hasPom = pomIn && !(dip.riposo_pom||[]).includes(dayOfWeek);
+
+      if (hasMat) {
+        // ritardo casuale: 80% puntuale, 15% in ritardo 1-15min, 5% assente
+        const rnd = Math.random();
+        let entMin = matIn;
+        if (rnd > 0.80 && rnd < 0.95) entMin = matIn + Math.floor(Math.random()*15)+1;
+        const entR = { tipo:'entrata', ts: d.getTime(), ore: minToTime(entMin) };
+        if (entMin > matIn) entR.ritardo = entMin - matIn;
+        badges.push(entR);
+
+        // Uscita mattina: 90% puntuale, 10% anticipata
+        let exitMin = matOut;
+        if (Math.random() > 0.90) exitMin = matOut - Math.floor(Math.random()*10)-1;
+        const exitR = { tipo:'uscita', ts: d.getTime(), ore: minToTime(exitMin) };
+        if (exitMin < matOut) exitR.anticipo = matOut - exitMin;
+        badges.push(exitR);
+      }
+
+      if (hasPom) {
+        let entMin = pomIn;
+        const rnd = Math.random();
+        if (rnd > 0.80 && rnd < 0.95) entMin = pomIn + Math.floor(Math.random()*15)+1;
+        const entR = { tipo:'entrata', ts: d.getTime(), ore: minToTime(entMin) };
+        if (entMin > pomIn) entR.ritardo = entMin - pomIn;
+        badges.push(entR);
+
+        let exitMin = pomOut;
+        if (Math.random() > 0.90) exitMin = pomOut - Math.floor(Math.random()*15)-1;
+        const exitR = { tipo:'uscita', ts: d.getTime(), ore: minToTime(exitMin) };
+        if (exitMin < pomOut) exitR.anticipo = pomOut - exitMin;
+        badges.push(exitR);
+      }
+
+      setData(key, badges);
+    }
+  });
+
+  toast('✅ Dati demo generati per 30 giorni!');
+  buildReport();
+}
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+let toastTimer = null;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+
+// ═══════════════════════════════════════════════════════
+// QR SCANNER (html5-qrcode)
+// ═══════════════════════════════════════════════════════
+
+// Valori validi dentro i QR affissi in sede
+// ═══════════════════════════════════════════════════════
+// QR SCANNER — usa jsQR (leggero, funziona ovunque)
+// ═══════════════════════════════════════════════════════
+
+const QR_SEDE_MAP = {
+  'OTT': ['ottaviano','ott','sede_ottaviano','badge_ott'],
+  'SAN': ["santarpino","sant'arpino","sarpino","arpino","sant arpino","sede_santarpino","badge_san","san"],
+  'VIL': ['villaricca','vil','sede_villaricca','badge_vil'],
+  'GIU': ['giugliano','giu','sede_giugliano','badge_giu'],
+};
+
+let _qrStream = null;
+let _qrRafId  = null;
+let _qrActive = false;
+let _qrCooldown = false;
+
+function matchSedeDaQR(testo) {
+  const t = testo.toLowerCase().replace(/[\s'']/g,'');
+  for (const [sede, kws] of Object.entries(QR_SEDE_MAP)) {
+    if (kws.some(k => t.includes(k.replace(/[\s'']/g,'')))) return sede;
+  }
+  return null;
+}
+
+async function avviaScanner() {
+  const val = getData('dipendente_corrente');
+  if (!val) { toast('⚠️ Seleziona prima il tuo nome'); return; }
+
+  // Controlla che jsQR sia caricato
+  if (typeof jsQR === 'undefined') {
+    toast('❌ Libreria QR non caricata. Connettiti a internet e ricarica la pagina.');
+    return;
+  }
+
+  _qrShow('scanning');
+  document.getElementById('qr-cam-status').textContent = 'Apertura fotocamera…';
+
+  try {
+    // Preferisce fotocamera posteriore (environment)
+    const constraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    };
+
+    _qrStream = await navigator.mediaDevices.getUserMedia(constraints);
+    const video = document.getElementById('qr-video-el');
+    video.srcObject = _qrStream;
+    video.onloadedmetadata = () => {
+      video.play();
+      _qrActive = true;
+      document.getElementById('qr-cam-status').textContent = 'Inquadra il QR Code della sede…';
+      _qrLoop();
+    };
+
+  } catch(err) {
+    console.error('[QR] Camera error:', err.name, err.message);
+    fermaScanner();
+
+    let msg = '';
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      msg = '❌ Accesso fotocamera negato.\n\nVai nelle impostazioni del browser → abilita la fotocamera per questa pagina, poi ricarica.';
+    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+      msg = '❌ Nessuna fotocamera trovata su questo dispositivo.';
+    } else if (err.name === 'NotReadableError') {
+      msg = '❌ Fotocamera occupata da un\'altra app. Chiudi le altre app e riprova.';
+    } else if (err.name === 'OverconstrainedError') {
+      // Riprova senza vincoli di risoluzione
+      _riprovanoCam();
+      return;
+    } else {
+      msg = `❌ Errore fotocamera: ${err.message}`;
+    }
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent = msg;
+  }
+}
+
+// Fallback senza vincoli di risoluzione
+async function _riprovanoCam() {
+  try {
+    _qrStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    const video = document.getElementById('qr-video-el');
+    video.srcObject = _qrStream;
+    video.onloadedmetadata = () => {
+      video.play();
+      _qrActive = true;
+      document.getElementById('qr-cam-status').textContent = 'Inquadra il QR Code della sede…';
+      _qrLoop();
+    };
+  } catch(err2) {
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent = '❌ Impossibile accedere alla fotocamera.\n' + err2.message;
+  }
+}
+
+function _qrLoop() {
+  if (!_qrActive) return;
+
+  const video  = document.getElementById('qr-video-el');
+  const canvas = document.getElementById('qr-canvas-hidden');
+  const ctx    = canvas.getContext('2d', { willReadFrequently: true });
+
+  if (video.readyState >= video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    try {
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imgData.data, imgData.width, imgData.height, {
+        inversionAttempts: 'attemptBoth'   // prova entrambe polarità
+      });
+
+      if (code && code.data && !_qrCooldown) {
+        _qrCooldown = true;
+        _onQRFound(code.data);
+        return; // stop loop
+      }
+    } catch(e) {
+      // ignora errori di lettura frame singolo
+    }
+  }
+
+  _qrRafId = requestAnimationFrame(_qrLoop);
+}
+
+function _onQRFound(rawText) {
+  console.log('[QR] Letto:', rawText);
+
+  fermaScanner(); // spegni camera
+
+  const val = getData('dipendente_corrente');
+  if (!val) { resetScanner(); return; }
+  const dip = getDipFull(val);
+
+  // Riconosci sede
+  const sedeQR = matchSedeDaQR(rawText);
+
+  // Se non è un QR sede ma contiene qualcosa, accetta come badge generico
+  if (!sedeQR) {
+    // Accetta qualsiasi QR e usa la sede del dipendente
+    _eseguiBadge(dip, dip.sede, rawText, true);
+    return;
+  }
+
+  // Verifica sede (MULTI può badgiare ovunque)
+  if (dip.sede !== 'MULTI' && dip.sede !== sedeQR) {
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent =
+      `⚠️ Sei registrato per ${SEDE_LABEL[dip.sede]||dip.sede},\nma questo QR è della sede ${SEDE_LABEL[sedeQR]||sedeQR}.\n\nContatta l'admin se è un errore.`;
+    return;
+  }
+
+  _eseguiBadge(dip, sedeQR, rawText, false);
+}
+
+function _eseguiBadge(dip, sedeQR, rawText, generico) {
+  const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
+  const badges = getData(key, []);
+  const lastBadge = badges[badges.length-1];
+  const inSede = lastBadge && lastBadge.tipo === 'entrata';
+
+  const sedeLabel = SEDE_LABEL[sedeQR] || sedeQR;
+  const extra = generico ? ' (QR generico)' : '';
+
+  if (!inSede) {
+    badgeEntrata();
+    mostraQROk(`Entrata registrata ✅`, `${dip.nome} · ${sedeLabel}${extra}`);
+  } else {
+    badgeUscita();
+    mostraQROk(`Uscita registrata ✅`, `${dip.nome} · ${sedeLabel}${extra}`);
+  }
+}
+
+function fermaScanner() {
+  _qrActive = false;
+  if (_qrRafId) { cancelAnimationFrame(_qrRafId); _qrRafId = null; }
+  if (_qrStream) {
+    _qrStream.getTracks().forEach(t => t.stop());
+    _qrStream = null;
+  }
+  const v = document.getElementById('qr-video-el');
+  if (v) { v.srcObject = null; }
+}
+
+function resetScanner() {
+  fermaScanner();
+  _qrCooldown = false;
+  _qrShow('idle');
+}
+
+function _qrShow(stato) {
+  ['idle','scanning','success','error'].forEach(s => {
+    const el = document.getElementById('qr-'+s);
+    if (el) el.style.display = (s === stato) ? 'block' : 'none';
   });
 }
 
-function printQR(key, nomeSede) {
-  const qrEl = document.getElementById(`qrbox-${key}`);
-  const img = qrEl.querySelector('img');
-  const src = img ? img.src : '';
+function mostraQROk(titolo, sub) {
+  _qrShow('success');
+  document.getElementById('qr-success-msg').textContent = titolo;
+  document.getElementById('qr-success-sub').textContent = sub;
+}
 
-  const win = window.open('', '_blank');
-  win.document.write(`
-    <!DOCTYPE html><html><head>
-    <title>QR – ${nomeSede}</title>
-    <style>
-      body { font-family: serif; display:flex; flex-direction:column; align-items:center; justify-content:center;
-             min-height:100vh; background:#fff; color:#111; padding:2rem; }
-      .logo { font-size:1.2rem; font-weight:700; letter-spacing:0.05em; color:#888; margin-bottom:0.5rem; }
-      h1 { font-size:2rem; font-weight:900; margin-bottom:0.25rem; }
-      p  { font-size:0.9rem; color:#888; margin-bottom:1.5rem; }
-      img { width:260px; height:260px; border:2px solid #EEE; border-radius:12px; padding:8px; }
-      .footer { margin-top:1.5rem; font-size:0.75rem; color:#AAA; }
-      .istr { margin-top:1.5rem; font-size:0.82rem; color:#555; text-align:center; max-width:260px; line-height:1.6; }
-    </style></head><body>
-    <div class="logo">Arredamenti Cinquegrana · Scavolini</div>
-    <h1>${nomeSede}</h1>
-    <p>${SEDI[key].indirizzo}</p>
-    <img src="${src}" alt="QR Code ${nomeSede}">
-    <div class="istr">📱 Scansiona questo codice con l'app Presenze per registrare la tua entrata o uscita</div>
-    <div class="footer">Sistema Badging — Arredamenti Cinquegrana</div>
-    <script>window.onload=()=>setTimeout(()=>window.print(),300);<\/script>
-    </body></html>
-  `);
+function mostraQRError(msg) {
+  _qrShow('error');
+  document.getElementById('qr-error-msg').textContent = msg;
+}
+
+// ═══════════════════════════════════════════════════════
+// GENERA QR SEDI (admin) — usa QRCode.js
+// ═══════════════════════════════════════════════════════
+function generaQRSedi() {
+  const sedi = [
+    { id:'OTT', label:'Ottaviano',    code:'SEDE_OTTAVIANO' },
+    { id:'SAN', label:"Sant'Arpino",  code:'SEDE_SANTARPINO' },
+    { id:'VIL', label:'Villaricca',   code:'SEDE_VILLARICCA' },
+    { id:'GIU', label:'Giugliano',    code:'SEDE_GIUGLIANO' },
+  ];
+
+  const area = document.getElementById('qr-gen-area');
+  if (!area) return;
+  area.innerHTML = '';
+
+  if (typeof QRCode === 'undefined') {
+    area.innerHTML = '<p style="color:var(--red);font-size:13px;">❌ Libreria QR non caricata. Connettiti a internet e ricarica la pagina.</p>';
+    return;
+  }
+
+  sedi.forEach(s => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-bottom:14px;padding:14px;background:var(--dark3);border-radius:10px;text-align:center;';
+
+    const qrDiv = document.createElement('div');
+    qrDiv.id = 'qr-gen-' + s.id;
+    qrDiv.style.cssText = 'display:inline-block;background:#fff;padding:10px;border-radius:8px;margin:8px 0;';
+
+    wrap.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:6px;">🏠 ${s.label}</div>`;
+    wrap.appendChild(qrDiv);
+    wrap.innerHTML += `<div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${s.code}</div>
+      <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="stampaQR('${s.label}','${s.code}')">🖨 Stampa</button>`;
+
+    // Re-aggiungi qrDiv perché innerHTML lo ha rimosso
+    const labelDiv = wrap.querySelector('[style*="font-weight:600"]');
+    labelDiv.after(qrDiv);
+
+    area.appendChild(wrap);
+
+    // Genera QR
+    try {
+      new QRCode(qrDiv, {
+        text: s.code,
+        width: 160, height: 160,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    } catch(e) {
+      qrDiv.textContent = s.code;
+    }
+  });
+
+  toast('✅ QR generati! Premi Stampa su ciascuno.');
+}
+
+function stampaQR(label, code) {
+  const size = 280;
+  const url = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(code)}&ecc=H&margin=10`;
+  const win = window.open('', '_blank', 'width=420,height=560');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>QR ${label}</title>
+  <style>
+    body{font-family:sans-serif;text-align:center;padding:30px;background:#fff;}
+    h1{font-size:22px;margin-bottom:4px;}
+    h2{font-size:15px;color:#555;margin-bottom:24px;font-weight:400;}
+    img{display:block;margin:0 auto 16px;}
+    p{font-size:12px;color:#888;}
+    @media print{body{padding:10px;}}
+  </style></head><body>
+  <h1>🏠 Arredamenti Cinquegrana</h1>
+  <h2>Badge QR — ${label}</h2>
+  <img src="${url}" width="${size}" height="${size}" alt="QR ${label}">
+  <p>Scansiona con l'app Badging per timbrare</p>
+  <p style="font-size:10px;color:#bbb;margin-top:4px;">${code}</p>
+  <script>window.onload=()=>{setTimeout(()=>window.print(),600);}<\/script>
+  </body></html>`);
   win.document.close();
 }
 
-// ========== MODAL ==========
-function showDipDetail(nome) {
-  const dip = DIPENDENTI.find(d => d.nome === nome);
-  const p = presenze[nome];
-  document.getElementById('modal-name').textContent = nome;
-  document.getElementById('modal-role').textContent = dip ? dip.ruolo + ' · ' + dip.sede : '';
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initDipendente();
+});
 
-  const logs = document.getElementById('modal-logs');
-  if (!p.logs.length) {
-    logs.innerHTML = '<div class="empty-state" style="padding:0.75rem 0;">Nessun badge registrato</div>';
-  } else {
-    logs.innerHTML = p.logs.map(l => `
-      <div class="modal-log">
-        <div class="modal-dot ${l.tipo}"></div>
-        <div class="modal-log-text">${l.tipo === 'in' ? 'Entrata' : 'Uscita'} — ${l.sede}${l.dist != null ? ` <span style="color:var(--gray);font-size:0.72rem;">📍${l.dist}m</span>` : ''}</div>
-        <div style="text-align:right">
-          <div class="modal-log-time">${l.ora}</div>
-          <div class="modal-log-detail">${l.data}</div>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  document.getElementById('modal-overlay').classList.add('open');
-}
-
-function closeModal() {
-  document.getElementById('modal-overlay').classList.remove('open');
-}
-
-// ========== ADMIN TABS ==========
-function switchAdminTab(tab) {
-  document.querySelectorAll('.admin-tab').forEach((t, i) => {
-    const tabs = ['presenze','qr','export'];
-    t.classList.toggle('active', tabs[i] === tab);
-  });
-  document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-
-  if (tab === 'presenze') renderDashboard();
-  if (tab === 'export') updateExportPreview();
-}
-
-// ========== EXPORT CSV ==========
-function exportCSV() {
-  const rows = [['Nome','Ruolo','Sede Dipendente','Tipo','Sede Badge','Ora','Data','GPS Distanza (m)']];
-  DIPENDENTI.forEach(d => {
-    const p = presenze[d.nome];
-    if (!p.logs.length) {
-      rows.push([d.nome, d.ruolo, d.sede, 'Assente', '—', '—', todayStr(), '—']);
-    } else {
-      p.logs.forEach(l => {
-        rows.push([d.nome, d.ruolo, d.sede,
-          l.tipo === 'in' ? 'Entrata' : 'Uscita',
-          l.sede, l.ora, l.data,
-          l.dist != null ? l.dist : 'Demo']);
-      });
-    }
-  });
-
-  const csv = rows.map(r => r.map(v => `"${v}"`).join(';')).join('\n');
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `presenze_cinquegrana_${todayStr().replace(/\//g,'-')}.csv`;
-  a.click();
-  showToast('CSV scaricato!', '📥');
-}
-
-function updateExportPreview() {
-  const lines = [];
-  DIPENDENTI.forEach(d => {
-    const p = presenze[d.nome];
-    if (p.logs.length) {
-      p.logs.forEach(l => {
-        lines.push(`${d.nome} | ${l.tipo === 'in' ? 'ENTRATA' : 'USCITA'} | ${l.sede} | ${l.ora} | ${l.data} | ${l.dist != null ? l.dist+'m' : 'demo'}`);
-      });
-    }
-  });
-
-  const el = document.getElementById('export-preview');
-  el.textContent = lines.length ? lines.join('\n') : 'Nessun badge registrato.';
-}
-
-function resetPresenze() {
-  if (!confirm('Sei sicuro di voler resettare tutte le presenze della giornata?')) return;
-  DIPENDENTI.forEach(d => {
-    presenze[d.nome] = { status: 'out', logs: [] };
-  });
-  saveStorage();
-  renderDashboard();
-  showToast('Presenze azzerate', '🔄');
-}
-
-// ========== AVVIO ==========
-init();
 </script>
 </body>
 </html>
