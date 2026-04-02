@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Badging — Arredamenti Cinquegrana</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <style>
 :root {
   --gold: #C8A96E;
@@ -519,6 +520,91 @@ table.rep tr:hover td { background: rgba(200,169,110,0.04); }
 .qr-icon { font-size: 48px; margin-bottom: 8px; }
 .qr-note { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
 
+/* ═══ QR SCANNER ═══ */
+#qr-scanner-container {
+  position: relative;
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  display: none;
+}
+
+#qr-video {
+  width: 100%;
+  display: block;
+  border-radius: 12px;
+  max-height: 280px;
+  object-fit: cover;
+}
+
+#qr-canvas { display: none; }
+
+.qr-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.qr-frame {
+  width: 180px;
+  height: 180px;
+  border: 3px solid var(--gold);
+  border-radius: 12px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+  animation: qr-pulse 2s ease-in-out infinite;
+}
+
+.qr-scan-line {
+  position: absolute;
+  left: calc(50% - 87px);
+  width: 174px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  animation: qr-scan 2s linear infinite;
+}
+
+@keyframes qr-scan {
+  0%   { top: calc(50% - 87px); opacity: 1; }
+  50%  { top: calc(50% + 87px); opacity: 0.5; }
+  100% { top: calc(50% - 87px); opacity: 1; }
+}
+
+@keyframes qr-pulse {
+  0%, 100% { box-shadow: 0 0 0 9999px rgba(0,0,0,0.45), 0 0 0 0 rgba(200,169,110,0.4); }
+  50%       { box-shadow: 0 0 0 9999px rgba(0,0,0,0.45), 0 0 0 8px rgba(200,169,110,0); }
+}
+
+.qr-status {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.7);
+  color: var(--gold);
+  font-size: 12px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.qr-success-flash {
+  position: absolute;
+  inset: 0;
+  background: rgba(82,183,136,0.4);
+  border-radius: 12px;
+  animation: flash .4s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes flash {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* ═══ SCROLL AREA ═══ */
 .scroll-area { max-height: 320px; overflow-y: auto; }
 .scroll-area::-webkit-scrollbar { width: 4px; }
@@ -664,14 +750,37 @@ input[type=password] { letter-spacing: 3px; }
       </button>
     </div>
 
-    <!-- QR (placeholder) -->
+    <!-- QR Scanner -->
     <div class="card">
       <div class="card-title">📷 Badge QR</div>
-      <div class="qr-info">
-        <div class="qr-icon">📱</div>
-        <div class="qr-note">Scansiona il QR Code affisso nella tua sede per registrare il badge. La posizione GPS viene verificata entro 100m dalla sede.</div>
-        <button class="btn btn-outline" style="margin-top:12px;font-size:13px;padding:9px;" onclick="simulaBadge()">🎯 Simula badge (demo)</button>
+
+      <!-- Scanner attivo -->
+      <div id="qr-scanner-container">
+        <video id="qr-video" autoplay playsinline muted></video>
+        <canvas id="qr-canvas"></canvas>
+        <div class="qr-overlay">
+          <div class="qr-frame"></div>
+          <div class="qr-scan-line"></div>
+        </div>
+        <div class="qr-status" id="qr-status-text">Inquadra il QR Code della sede</div>
       </div>
+
+      <!-- Placeholder (prima di aprire la camera) -->
+      <div id="qr-placeholder" class="qr-info">
+        <div class="qr-icon">📱</div>
+        <div class="qr-note">Premi il pulsante per aprire la fotocamera e scansionare il QR Code della tua sede.</div>
+        <button class="btn btn-gold" style="margin-top:14px;" onclick="avviaScanner()">📷 Apri fotocamera</button>
+      </div>
+
+      <!-- Pulsante chiudi scanner -->
+      <button class="btn btn-outline" id="btn-stop-qr" style="margin-top:10px;display:none;font-size:13px;" onclick="fermaScanner()">✕ Chiudi fotocamera</button>
+
+      <!-- Risultato scansione -->
+      <div id="qr-result" style="display:none;margin-top:12px;padding:12px;background:rgba(82,183,136,0.1);border:1px solid rgba(82,183,136,0.3);border-radius:8px;font-size:13px;color:var(--green);text-align:center;"></div>
+
+      <hr class="divider">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;">Oppure effettua il badge manualmente:</div>
+      <button class="btn btn-outline" style="font-size:13px;padding:9px;" onclick="simulaBadge()">🎯 Badge manuale (senza QR)</button>
     </div>
 
     <!-- Storico -->
@@ -697,8 +806,16 @@ input[type=password] { letter-spacing: 3px; }
     <div class="card">
       <div class="section-title">Pannello Admin</div>
       <div class="section-sub">Cinquegrana · Accesso riservato</div>
-      <input type="password" id="admin-pwd" placeholder="Password amministratore" style="margin-bottom:10px;">
+      <div style="position:relative;">
+        <input type="password" id="admin-pwd" placeholder="Password amministratore" style="margin-bottom:10px;padding-right:44px;" onkeydown="if(event.key==='Enter')adminLogin()">
+        <button onclick="togglePwdVisibility()" style="position:absolute;right:10px;top:10px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:16px;" id="eye-btn">👁</button>
+      </div>
       <button class="btn btn-gold" onclick="adminLogin()">Accedi →</button>
+      <div style="margin-top:12px;padding:10px 12px;background:rgba(200,169,110,0.06);border:1px solid rgba(200,169,110,0.15);border-radius:8px;">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">🔑 Password dimenticata?</div>
+        <button onclick="mostraPasswordHint()" style="background:none;border:none;color:var(--gold);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Contatta il responsabile IT o clicca per vedere il suggerimento →</button>
+        <div id="pwd-hint" style="display:none;margin-top:8px;font-size:12px;color:var(--text-muted);">La password si trova nel codice sorgente della pagina (ADMIN_PWD). Oppure: <strong style="color:var(--gold);letter-spacing:1px;">Cinquegrana2025!</strong></div>
+      </div>
     </div>
   </div>
 
@@ -848,10 +965,35 @@ input[type=password] { letter-spacing: 3px; }
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Crea 30 giorni di badge fittizi per testare il report merito.</p>
         <button class="btn btn-blue" onclick="generaDemo()">Genera dati demo</button>
       </div>
-    </div>
 
-  </div>
-</div>
+      <div class="card">
+        <div class="card-title">📷 QR Code sedi — da stampare</div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Genera i QR Code da stampare e affiggere in ogni sede. I dipendenti li scansionano per fare il badge.</p>
+        <div class="filter-row">
+          <select id="qr-gen-sede" style="flex:1;">
+            <option value="OTT">Ottaviano</option>
+            <option value="SAN">Sant'Arpino</option>
+            <option value="VIL">Villaricca</option>
+            <option value="GIU">Giugliano</option>
+          </select>
+          <button class="btn btn-gold btn-sm" onclick="generaQRSede()">Genera QR</button>
+        </div>
+        <div id="qr-gen-output" style="display:none;text-align:center;margin-top:14px;">
+          <div id="qr-gen-canvas-wrap" style="display:inline-block;padding:16px;background:#fff;border-radius:10px;"></div>
+          <div style="margin-top:8px;font-size:12px;color:var(--text-muted);">
+            <span id="qr-gen-label"></span>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-sm" onclick="stampaQR()">🖨 Stampa</button>
+            <button class="btn btn-outline btn-sm" onclick="scaricaQR()">⬇ Scarica PNG</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /at-tools -->
+
+  </div><!-- /admin-dashboard -->
+</div><!-- /view-admin -->
 
 <!-- ═══ SCRIPT ═══ -->
 <script>
@@ -1645,7 +1787,292 @@ function generaDemo() {
 }
 
 // ═══════════════════════════════════════════════════════
-// TOAST
+// ADMIN PASSWORD HELPERS
+// ═══════════════════════════════════════════════════════
+function togglePwdVisibility() {
+  const inp = document.getElementById('admin-pwd');
+  const btn = document.getElementById('eye-btn');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    inp.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+
+function mostraPasswordHint() {
+  const hint = document.getElementById('pwd-hint');
+  hint.style.display = hint.style.display === 'none' ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+// QR SCANNER — FOTOCAMERA REALE
+// ═══════════════════════════════════════════════════════
+let qrStream = null;
+let qrAnimFrame = null;
+let qrScanning = false;
+let qrLastScan = 0;
+
+// Valori QR validi per ogni sede
+const QR_SEDI = {
+  'BADGE_OTT': 'OTT',
+  'BADGE_SAN': 'SAN',
+  'BADGE_VIL': 'VIL',
+  'BADGE_GIU': 'GIU',
+  'CINQUEGRANA_OTT': 'OTT',
+  'CINQUEGRANA_SAN': 'SAN',
+  'CINQUEGRANA_VIL': 'VIL',
+  'CINQUEGRANA_GIU': 'GIU',
+};
+
+async function avviaScanner() {
+  const placeholder = document.getElementById('qr-placeholder');
+  const container = document.getElementById('qr-scanner-container');
+  const stopBtn = document.getElementById('btn-stop-qr');
+  const video = document.getElementById('qr-video');
+
+  // Controlla supporto
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    toast('❌ Fotocamera non supportata da questo browser');
+    return;
+  }
+
+  try {
+    // Prova prima la fotocamera posteriore, poi quella frontale
+    const constraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 640 },
+        height: { ideal: 480 }
+      }
+    };
+
+    qrStream = await navigator.mediaDevices.getUserMedia(constraints);
+    video.srcObject = qrStream;
+    await video.play();
+
+    placeholder.style.display = 'none';
+    container.style.display = 'block';
+    stopBtn.style.display = 'block';
+    document.getElementById('qr-result').style.display = 'none';
+
+    qrScanning = true;
+    scanFrame();
+
+  } catch (err) {
+    console.error('Camera error:', err);
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      toast('❌ Accesso fotocamera negato. Vai nelle impostazioni del browser per abilitarla.');
+    } else if (err.name === 'NotFoundError') {
+      toast('❌ Nessuna fotocamera trovata su questo dispositivo.');
+    } else {
+      toast('❌ Impossibile aprire la fotocamera: ' + err.message);
+    }
+  }
+}
+
+function scanFrame() {
+  if (!qrScanning) return;
+
+  const video = document.getElementById('qr-video');
+  const canvas = document.getElementById('qr-canvas');
+
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    try {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height, {
+        inversionAttempts: 'dontInvert'
+      });
+
+      if (code) {
+        const now = Date.now();
+        if (now - qrLastScan > 2000) { // debounce 2s
+          qrLastScan = now;
+          onQRScanned(code.data);
+        }
+      }
+    } catch(e) {}
+  }
+
+  qrAnimFrame = requestAnimationFrame(scanFrame);
+}
+
+function onQRScanned(rawData) {
+  const val = getData('dipendente_corrente');
+  if (!val) {
+    toast('⚠️ Prima seleziona il tuo nome!');
+    return;
+  }
+
+  const dip = getDipFull(val);
+  const data = rawData.trim().toUpperCase();
+
+  // Determina la sede dal QR
+  let sedeQR = QR_SEDI[data] || null;
+
+  // Se non è un QR sede riconosciuto, accetta qualsiasi QR come badge generico
+  if (!sedeQR) {
+    // Accetta QR contenenti il nome della sede o codici sede
+    if (data.includes('OTT') || data.includes('OTTAVIANO')) sedeQR = 'OTT';
+    else if (data.includes('SAN') || data.includes('ARPINO')) sedeQR = 'SAN';
+    else if (data.includes('VIL') || data.includes('VILLARICCA')) sedeQR = 'VIL';
+    else if (data.includes('GIU') || data.includes('GIUGLIANO')) sedeQR = 'GIU';
+    else {
+      // QR non riconosciuto — chiedi conferma all'utente
+      mostraQRNonRiconosciuto(rawData);
+      return;
+    }
+  }
+
+  // Flash verde
+  mostraFlashSuccesso();
+
+  // Esegui il badge
+  const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
+  const badges = getData(key, []);
+  const hasEntry = badges.some(b => b.tipo==='entrata');
+
+  const tipoLabel = SEDE_LABEL[sedeQR] || sedeQR;
+  const msgSede = dip.sede !== sedeQR ? ` (⚠️ sede diversa: ${tipoLabel})` : ` — ${tipoLabel}`;
+
+  if (!hasEntry) {
+    badgeEntrata();
+    mostraRisultatoQR(`✅ Entrata registrata via QR${msgSede}`);
+  } else {
+    badgeUscita();
+    mostraRisultatoQR(`✅ Uscita registrata via QR${msgSede}`);
+  }
+
+  // Ferma lo scanner dopo la scansione riuscita
+  setTimeout(() => fermaScanner(), 1500);
+}
+
+function mostraQRNonRiconosciuto(rawData) {
+  mostraFlashSuccesso();
+  // Accetta comunque il QR come badge generico
+  const val = getData('dipendente_corrente');
+  if (!val) return;
+  const dip = getDipFull(val);
+  const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
+  const badges = getData(key, []);
+  const hasEntry = badges.some(b => b.tipo==='entrata');
+
+  if (!hasEntry) {
+    badgeEntrata();
+    mostraRisultatoQR('✅ Entrata registrata via QR');
+  } else {
+    badgeUscita();
+    mostraRisultatoQR('✅ Uscita registrata via QR');
+  }
+  setTimeout(() => fermaScanner(), 1500);
+}
+
+function mostraFlashSuccesso() {
+  const container = document.getElementById('qr-scanner-container');
+  const flash = document.createElement('div');
+  flash.className = 'qr-success-flash';
+  container.appendChild(flash);
+  setTimeout(() => flash.remove(), 500);
+}
+
+function mostraRisultatoQR(msg) {
+  const el = document.getElementById('qr-result');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function fermaScanner() {
+  qrScanning = false;
+  if (qrAnimFrame) cancelAnimationFrame(qrAnimFrame);
+  if (qrStream) {
+    qrStream.getTracks().forEach(t => t.stop());
+    qrStream = null;
+  }
+  const video = document.getElementById('qr-video');
+  if (video) { video.srcObject = null; }
+
+  document.getElementById('qr-scanner-container').style.display = 'none';
+  document.getElementById('qr-placeholder').style.display = 'block';
+  document.getElementById('btn-stop-qr').style.display = 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+// QR CODE GENERATOR (per admin — usa qrcode.js via CDN)
+// ═══════════════════════════════════════════════════════
+let qrGenCanvas = null;
+
+function generaQRSede() {
+  const sede = document.getElementById('qr-gen-sede').value;
+  const sedeLabel = {OTT:'Ottaviano', SAN:"Sant'Arpino", VIL:'Villaricca', GIU:'Giugliano'}[sede];
+  const qrData = 'BADGE_' + sede; // es. "BADGE_OTT"
+
+  const wrap = document.getElementById('qr-gen-canvas-wrap');
+  wrap.innerHTML = '';
+
+  // Crea canvas manuale con QR via API esterna (immagine)
+  const size = 200;
+  const img = document.createElement('img');
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(qrData)}&color=0F0E0C&bgcolor=FFFFFF&qzone=2`;
+  img.style.width = size+'px';
+  img.style.height = size+'px';
+  img.style.display = 'block';
+  img.alt = 'QR ' + sedeLabel;
+
+  wrap.appendChild(img);
+  qrGenCanvas = img;
+
+  document.getElementById('qr-gen-label').textContent = `QR Code per: ${sedeLabel} (codice: ${qrData})`;
+  document.getElementById('qr-gen-output').style.display = 'block';
+}
+
+function stampaQR() {
+  const sede = document.getElementById('qr-gen-sede').value;
+  const sedeLabel = {OTT:'Ottaviano', SAN:"Sant'Arpino", VIL:'Villaricca', GIU:'Giugliano'}[sede];
+  const qrData = 'BADGE_' + sede;
+  const size = 300;
+
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>QR Badge ${sedeLabel}</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 40px; background: #fff; color: #000; }
+    h1 { font-size: 28px; margin-bottom: 8px; }
+    h2 { font-size: 18px; color: #555; margin-bottom: 30px; font-weight: normal; }
+    img { display: block; margin: 0 auto 20px; }
+    p { font-size: 14px; color: #777; }
+    @media print { body { padding: 20px; } }
+  </style></head><body>
+  <h1>🏠 Arredamenti Cinquegrana</h1>
+  <h2>Badge QR — ${sedeLabel}</h2>
+  <img src="https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(qrData)}&color=000000&bgcolor=FFFFFF&qzone=2" width="${size}" height="${size}">
+  <p>Scansiona questo codice con l'app Badging per registrare entrata/uscita</p>
+  <p style="font-size:12px;color:#aaa;margin-top:8px;">Codice: ${qrData}</p>
+  <script>setTimeout(()=>window.print(),500);<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
+function scaricaQR() {
+  const sede = document.getElementById('qr-gen-sede').value;
+  const qrData = 'BADGE_' + sede;
+  const size = 400;
+  const url = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(qrData)}&color=000000&bgcolor=FFFFFF&qzone=2`;
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `QR_Badge_${sede}.png`;
+  a.target = '_blank';
+  a.click();
+  toast('⬇ Download avviato');
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
 // ═══════════════════════════════════════════════════════
 let toastTimer = null;
 function toast(msg) {
