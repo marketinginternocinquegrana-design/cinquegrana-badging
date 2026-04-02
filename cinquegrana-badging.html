@@ -515,9 +515,51 @@ table.rep tr:hover td { background: rgba(200,169,110,0.04); }
   border: 2px dashed rgba(200,169,110,0.2);
   border-radius: 10px;
 }
-
 .qr-icon { font-size: 48px; margin-bottom: 8px; }
 .qr-note { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+/* ═══ QR VIDEO ═══ */
+#qr-video-el {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  background: #000;
+}
+.qr-frame-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+.qr-aim {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 180px; height: 180px;
+  border: 3px solid var(--gold);
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+  pointer-events: none;
+}
+.qr-aim::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  animation: scanline 2s linear infinite;
+}
+@keyframes scanline {
+  0%   { top: 0;    opacity:1; }
+  50%  { top: 100%; opacity:0.4; }
+  100% { top: 0;    opacity:1; }
+}
+.qr-cam-label {
+  text-align:center; font-size:12px; color:var(--text-muted); margin-top:8px;
+}
+#qr-canvas-hidden { display: none; }
 
 /* ═══ SCROLL AREA ═══ */
 .scroll-area { max-height: 320px; overflow-y: auto; }
@@ -532,8 +574,10 @@ input[type=password] { letter-spacing: 3px; }
   .badge-btn { padding: 16px 6px; font-size: 12px; }
 }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<!-- jsQR: libreria leggera per decodifica QR da canvas, zero dipendenze server -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<!-- QRCode.js per generare QR in admin -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -666,11 +710,11 @@ input[type=password] { letter-spacing: 3px; }
       </button>
     </div>
 
-    <!-- QR SCANNER REALE -->
+    <!-- QR SCANNER -->
     <div class="card" id="qr-card">
       <div class="card-title">📷 Scansiona QR sede</div>
 
-      <!-- Stato: pronto per scansionare -->
+      <!-- Idle -->
       <div id="qr-idle">
         <div class="qr-info" style="padding:16px 10px;">
           <div class="qr-icon">📱</div>
@@ -680,25 +724,29 @@ input[type=password] { letter-spacing: 3px; }
         </div>
       </div>
 
-      <!-- Stato: scanner attivo -->
+      <!-- Scanner attivo -->
       <div id="qr-scanning" style="display:none;">
-        <div id="qr-reader" style="width:100%;border-radius:8px;overflow:hidden;"></div>
-        <p style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:8px;">Inquadra il QR Code della sede</p>
+        <div class="qr-frame-wrap">
+          <video id="qr-video-el" autoplay playsinline muted></video>
+          <div class="qr-aim"></div>
+        </div>
+        <canvas id="qr-canvas-hidden"></canvas>
+        <div class="qr-cam-label" id="qr-cam-status">Inquadra il QR Code della sede…</div>
         <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="fermaScanner()">✕ Annulla</button>
       </div>
 
-      <!-- Stato: scansione ok -->
+      <!-- Successo -->
       <div id="qr-success" style="display:none;text-align:center;padding:16px;">
         <div style="font-size:40px;margin-bottom:8px;">✅</div>
-        <div id="qr-success-msg" style="font-size:14px;font-weight:600;color:var(--green);"></div>
+        <div id="qr-success-msg" style="font-size:15px;font-weight:600;color:var(--green);"></div>
         <div id="qr-success-sub" style="font-size:12px;color:var(--text-muted);margin-top:4px;"></div>
         <button class="btn btn-outline" style="margin-top:14px;font-size:13px;" onclick="resetScanner()">Scansiona di nuovo</button>
       </div>
 
-      <!-- Stato: errore sede -->
+      <!-- Errore -->
       <div id="qr-error" style="display:none;text-align:center;padding:16px;">
-        <div style="font-size:40px;margin-bottom:8px;">⚠️</div>
-        <div id="qr-error-msg" style="font-size:13px;color:var(--red);"></div>
+        <div style="font-size:36px;margin-bottom:8px;">⚠️</div>
+        <div id="qr-error-msg" style="font-size:13px;color:var(--red);white-space:pre-line;"></div>
         <button class="btn btn-outline" style="margin-top:14px;font-size:13px;" onclick="resetScanner()">Riprova</button>
       </div>
     </div>
@@ -1697,178 +1745,297 @@ function toast(msg) {
 // ═══════════════════════════════════════════════════════
 
 // Valori validi dentro i QR affissi in sede
-// Accetta: "SEDE_SANTARPINO", "SEDE_OTTAVIANO", "SEDE_VILLARICCA", "SEDE_GIUGLIANO"
-// ma anche testo parziale case-insensitive (es. "sant'arpino", "santarpino", "arpino")
+// ═══════════════════════════════════════════════════════
+// QR SCANNER — usa jsQR (leggero, funziona ovunque)
+// ═══════════════════════════════════════════════════════
+
 const QR_SEDE_MAP = {
-  'OTT':   ['ottaviano','ott','sede_ottaviano'],
-  'SAN':   ["santarpino","sant'arpino","sarpino","arpino","sant arpino","sede_santarpino","san"],
-  'VIL':   ['villaricca','vil','sede_villaricca'],
-  'GIU':   ['giugliano','giu','sede_giugliano'],
-  'MULTI': ['multi','tutte']
+  'OTT': ['ottaviano','ott','sede_ottaviano','badge_ott'],
+  'SAN': ["santarpino","sant'arpino","sarpino","arpino","sant arpino","sede_santarpino","badge_san","san"],
+  'VIL': ['villaricca','vil','sede_villaricca','badge_vil'],
+  'GIU': ['giugliano','giu','sede_giugliano','badge_giu'],
 };
 
-let html5QrScanner = null;
+let _qrStream = null;
+let _qrRafId  = null;
+let _qrActive = false;
+let _qrCooldown = false;
 
 function matchSedeDaQR(testo) {
-  const t = testo.toLowerCase().replace(/\s+/g,'').replace(/['']/g,"'");
-  for (const [sede, keywords] of Object.entries(QR_SEDE_MAP)) {
-    if (keywords.some(k => t.includes(k.replace(/\s+/g,'')))) return sede;
+  const t = testo.toLowerCase().replace(/[\s'']/g,'');
+  for (const [sede, kws] of Object.entries(QR_SEDE_MAP)) {
+    if (kws.some(k => t.includes(k.replace(/[\s'']/g,'')))) return sede;
   }
   return null;
 }
 
-function avviaScanner() {
+async function avviaScanner() {
   const val = getData('dipendente_corrente');
   if (!val) { toast('⚠️ Seleziona prima il tuo nome'); return; }
 
-  document.getElementById('qr-idle').style.display = 'none';
-  document.getElementById('qr-scanning').style.display = 'block';
-  document.getElementById('qr-success').style.display = 'none';
-  document.getElementById('qr-error').style.display = 'none';
+  // Controlla che jsQR sia caricato
+  if (typeof jsQR === 'undefined') {
+    toast('❌ Libreria QR non caricata. Connettiti a internet e ricarica la pagina.');
+    return;
+  }
 
-  // Piccolo delay per permettere al DOM di aggiornarsi prima di iniziare la camera
-  setTimeout(() => {
-    html5QrScanner = new Html5Qrcode('qr-reader');
+  _qrShow('scanning');
+  document.getElementById('qr-cam-status').textContent = 'Apertura fotocamera…';
 
-    const config = {
-      fps: 10,
-      qrbox: { width: 220, height: 220 },
-      aspectRatio: 1.0,
-      experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+  try {
+    // Preferisce fotocamera posteriore (environment)
+    const constraints = {
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
     };
 
-    html5QrScanner.start(
-      { facingMode: 'environment' },  // usa fotocamera posteriore
-      config,
-      onQRSuccess,
-      onQRError
-    ).catch(err => {
-      console.error('Errore avvio scanner:', err);
-      // Fallback: prova con fotocamera frontale
-      html5QrScanner.start(
-        { facingMode: 'user' },
-        config,
-        onQRSuccess,
-        onQRError
-      ).catch(err2 => {
-        fermaScanner();
-        mostraQRError('Impossibile accedere alla fotocamera. Assicurati di aver concesso il permesso e che la pagina sia aperta in HTTPS.');
-      });
-    });
-  }, 100);
+    _qrStream = await navigator.mediaDevices.getUserMedia(constraints);
+    const video = document.getElementById('qr-video-el');
+    video.srcObject = _qrStream;
+    video.onloadedmetadata = () => {
+      video.play();
+      _qrActive = true;
+      document.getElementById('qr-cam-status').textContent = 'Inquadra il QR Code della sede…';
+      _qrLoop();
+    };
+
+  } catch(err) {
+    console.error('[QR] Camera error:', err.name, err.message);
+    fermaScanner();
+
+    let msg = '';
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      msg = '❌ Accesso fotocamera negato.\n\nVai nelle impostazioni del browser → abilita la fotocamera per questa pagina, poi ricarica.';
+    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+      msg = '❌ Nessuna fotocamera trovata su questo dispositivo.';
+    } else if (err.name === 'NotReadableError') {
+      msg = '❌ Fotocamera occupata da un\'altra app. Chiudi le altre app e riprova.';
+    } else if (err.name === 'OverconstrainedError') {
+      // Riprova senza vincoli di risoluzione
+      _riprovanoCam();
+      return;
+    } else {
+      msg = `❌ Errore fotocamera: ${err.message}`;
+    }
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent = msg;
+  }
 }
 
-function onQRSuccess(decodedText) {
-  // Ferma subito lo scanner
-  if (html5QrScanner) {
-    html5QrScanner.stop().catch(() => {});
-    html5QrScanner = null;
+// Fallback senza vincoli di risoluzione
+async function _riprovanoCam() {
+  try {
+    _qrStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    const video = document.getElementById('qr-video-el');
+    video.srcObject = _qrStream;
+    video.onloadedmetadata = () => {
+      video.play();
+      _qrActive = true;
+      document.getElementById('qr-cam-status').textContent = 'Inquadra il QR Code della sede…';
+      _qrLoop();
+    };
+  } catch(err2) {
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent = '❌ Impossibile accedere alla fotocamera.\n' + err2.message;
   }
+}
+
+function _qrLoop() {
+  if (!_qrActive) return;
+
+  const video  = document.getElementById('qr-video-el');
+  const canvas = document.getElementById('qr-canvas-hidden');
+  const ctx    = canvas.getContext('2d', { willReadFrequently: true });
+
+  if (video.readyState >= video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    try {
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imgData.data, imgData.width, imgData.height, {
+        inversionAttempts: 'attemptBoth'   // prova entrambe polarità
+      });
+
+      if (code && code.data && !_qrCooldown) {
+        _qrCooldown = true;
+        _onQRFound(code.data);
+        return; // stop loop
+      }
+    } catch(e) {
+      // ignora errori di lettura frame singolo
+    }
+  }
+
+  _qrRafId = requestAnimationFrame(_qrLoop);
+}
+
+function _onQRFound(rawText) {
+  console.log('[QR] Letto:', rawText);
+
+  fermaScanner(); // spegni camera
 
   const val = getData('dipendente_corrente');
   if (!val) { resetScanner(); return; }
   const dip = getDipFull(val);
 
-  // Riconosci la sede dal contenuto del QR
-  const sedeQR = matchSedeDaQR(decodedText);
+  // Riconosci sede
+  const sedeQR = matchSedeDaQR(rawText);
 
+  // Se non è un QR sede ma contiene qualcosa, accetta come badge generico
   if (!sedeQR) {
-    mostraQRError(`QR non riconosciuto come sede Cinquegrana.\n\nContenuto letto: "${decodedText}"\n\nChiedi all'admin di rigenerare il QR corretto.`);
+    // Accetta qualsiasi QR e usa la sede del dipendente
+    _eseguiBadge(dip, dip.sede, rawText, true);
     return;
   }
 
-  // Verifica che il dipendente appartenga a quella sede (MULTI può badgiare ovunque)
+  // Verifica sede (MULTI può badgiare ovunque)
   if (dip.sede !== 'MULTI' && dip.sede !== sedeQR) {
-    mostraQRError(`⚠️ Sei registrato per la sede ${SEDE_LABEL[dip.sede]||dip.sede}, ma questo QR è della sede ${SEDE_LABEL[sedeQR]||sedeQR}.\n\nContatta l'admin se ritieni sia un errore.`);
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent =
+      `⚠️ Sei registrato per ${SEDE_LABEL[dip.sede]||dip.sede},\nma questo QR è della sede ${SEDE_LABEL[sedeQR]||sedeQR}.\n\nContatta l'admin se è un errore.`;
     return;
   }
 
-  // Esegui il badge (entrata o uscita)
+  _eseguiBadge(dip, sedeQR, rawText, false);
+}
+
+function _eseguiBadge(dip, sedeQR, rawText, generico) {
   const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
   const badges = getData(key, []);
-  const hasEntry = badges.some(b => b.tipo==='entrata');
   const lastBadge = badges[badges.length-1];
   const inSede = lastBadge && lastBadge.tipo === 'entrata';
 
-  // Registra
+  const sedeLabel = SEDE_LABEL[sedeQR] || sedeQR;
+  const extra = generico ? ' (QR generico)' : '';
+
   if (!inSede) {
     badgeEntrata();
-    mostraQROk('Entrata registrata ✅', `${dip.nome} · ${SEDE_LABEL[sedeQR]||sedeQR}`);
+    mostraQROk(`Entrata registrata ✅`, `${dip.nome} · ${sedeLabel}${extra}`);
   } else {
     badgeUscita();
-    mostraQROk('Uscita registrata ✅', `${dip.nome} · ${SEDE_LABEL[sedeQR]||sedeQR}`);
+    mostraQROk(`Uscita registrata ✅`, `${dip.nome} · ${sedeLabel}${extra}`);
   }
-}
-
-function onQRError(err) {
-  // Silenzia — è normale ricevere errori continui mentre inquadra
 }
 
 function fermaScanner() {
-  if (html5QrScanner) {
-    html5QrScanner.stop().catch(() => {});
-    html5QrScanner = null;
+  _qrActive = false;
+  if (_qrRafId) { cancelAnimationFrame(_qrRafId); _qrRafId = null; }
+  if (_qrStream) {
+    _qrStream.getTracks().forEach(t => t.stop());
+    _qrStream = null;
   }
-  resetScanner();
+  const v = document.getElementById('qr-video-el');
+  if (v) { v.srcObject = null; }
 }
 
 function resetScanner() {
-  if (html5QrScanner) {
-    html5QrScanner.stop().catch(() => {});
-    html5QrScanner = null;
-  }
-  document.getElementById('qr-idle').style.display = 'block';
-  document.getElementById('qr-scanning').style.display = 'none';
-  document.getElementById('qr-success').style.display = 'none';
-  document.getElementById('qr-error').style.display = 'none';
-  // Pulisci il div del reader per evitare duplicati
-  const reader = document.getElementById('qr-reader');
-  if (reader) reader.innerHTML = '';
+  fermaScanner();
+  _qrCooldown = false;
+  _qrShow('idle');
+}
+
+function _qrShow(stato) {
+  ['idle','scanning','success','error'].forEach(s => {
+    const el = document.getElementById('qr-'+s);
+    if (el) el.style.display = (s === stato) ? 'block' : 'none';
+  });
 }
 
 function mostraQROk(titolo, sub) {
-  document.getElementById('qr-scanning').style.display = 'none';
-  document.getElementById('qr-idle').style.display = 'none';
-  document.getElementById('qr-success').style.display = 'block';
+  _qrShow('success');
   document.getElementById('qr-success-msg').textContent = titolo;
   document.getElementById('qr-success-sub').textContent = sub;
 }
 
 function mostraQRError(msg) {
-  document.getElementById('qr-scanning').style.display = 'none';
-  document.getElementById('qr-idle').style.display = 'none';
-  document.getElementById('qr-error').style.display = 'block';
+  _qrShow('error');
   document.getElementById('qr-error-msg').textContent = msg;
 }
 
-
 // ═══════════════════════════════════════════════════════
-// GENERA QR SEDI (admin)
+// GENERA QR SEDI (admin) — usa QRCode.js
 // ═══════════════════════════════════════════════════════
 function generaQRSedi() {
   const sedi = [
-    { id:'OTT', label:"Ottaviano",   code:'SEDE_OTTAVIANO' },
-    { id:'SAN', label:"Sant'Arpino", code:'SEDE_SANTARPINO' },
-    { id:'VIL', label:"Villaricca",  code:'SEDE_VILLARICCA' },
-    { id:'GIU', label:"Giugliano",   code:'SEDE_GIUGLIANO' },
+    { id:'OTT', label:'Ottaviano',    code:'SEDE_OTTAVIANO' },
+    { id:'SAN', label:"Sant'Arpino",  code:'SEDE_SANTARPINO' },
+    { id:'VIL', label:'Villaricca',   code:'SEDE_VILLARICCA' },
+    { id:'GIU', label:'Giugliano',    code:'SEDE_GIUGLIANO' },
   ];
+
   const area = document.getElementById('qr-gen-area');
   if (!area) return;
   area.innerHTML = '';
+
+  if (typeof QRCode === 'undefined') {
+    area.innerHTML = '<p style="color:var(--red);font-size:13px;">❌ Libreria QR non caricata. Connettiti a internet e ricarica la pagina.</p>';
+    return;
+  }
+
   sedi.forEach(s => {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'margin-bottom:14px;padding:14px;background:var(--dark3);border-radius:10px;text-align:center;';
-    wrap.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:10px;">🏠 ${s.label}</div><div id="qr-${s.id}" style="display:inline-block;background:#fff;padding:8px;border-radius:6px;"></div><div style="font-size:10px;color:var(--text-muted);margin-top:6px;">${s.code}</div>`;
+
+    const qrDiv = document.createElement('div');
+    qrDiv.id = 'qr-gen-' + s.id;
+    qrDiv.style.cssText = 'display:inline-block;background:#fff;padding:10px;border-radius:8px;margin:8px 0;';
+
+    wrap.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:6px;">🏠 ${s.label}</div>`;
+    wrap.appendChild(qrDiv);
+    wrap.innerHTML += `<div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${s.code}</div>
+      <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="stampaQR('${s.label}','${s.code}')">🖨 Stampa</button>`;
+
+    // Re-aggiungi qrDiv perché innerHTML lo ha rimosso
+    const labelDiv = wrap.querySelector('[style*="font-weight:600"]');
+    labelDiv.after(qrDiv);
+
     area.appendChild(wrap);
-    setTimeout(() => {
-      try {
-        new QRCode(document.getElementById('qr-'+s.id), {
-          text: s.code, width:160, height:160, correctLevel: QRCode.CorrectLevel.H
-        });
-      } catch(e) { document.getElementById('qr-'+s.id).textContent = s.code; }
-    }, 80);
+
+    // Genera QR
+    try {
+      new QRCode(qrDiv, {
+        text: s.code,
+        width: 160, height: 160,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    } catch(e) {
+      qrDiv.textContent = s.code;
+    }
   });
-  toast('✅ QR generati! Fai screenshot o usa Stampa per salvarli.');
+
+  toast('✅ QR generati! Premi Stampa su ciascuno.');
+}
+
+function stampaQR(label, code) {
+  const size = 280;
+  const url = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(code)}&ecc=H&margin=10`;
+  const win = window.open('', '_blank', 'width=420,height=560');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>QR ${label}</title>
+  <style>
+    body{font-family:sans-serif;text-align:center;padding:30px;background:#fff;}
+    h1{font-size:22px;margin-bottom:4px;}
+    h2{font-size:15px;color:#555;margin-bottom:24px;font-weight:400;}
+    img{display:block;margin:0 auto 16px;}
+    p{font-size:12px;color:#888;}
+    @media print{body{padding:10px;}}
+  </style></head><body>
+  <h1>🏠 Arredamenti Cinquegrana</h1>
+  <h2>Badge QR — ${label}</h2>
+  <img src="${url}" width="${size}" height="${size}" alt="QR ${label}">
+  <p>Scansiona con l'app Badging per timbrare</p>
+  <p style="font-size:10px;color:#bbb;margin-top:4px;">${code}</p>
+  <script>window.onload=()=>{setTimeout(()=>window.print(),600);}<\/script>
+  </body></html>`);
+  win.document.close();
 }
 
 // ═══════════════════════════════════════════════════════
