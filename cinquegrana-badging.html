@@ -574,7 +574,7 @@ input[type=password] { letter-spacing: 3px; }
   .badge-btn { padding: 16px 6px; font-size: 12px; }
 }
 </style>
-<!-- jsQR: libreria leggera per decodifica QR da canvas, zero dipendenze server -->
+<!-- jsQR: decodifica QR da immagine/canvas — funziona su tutti i browser incluso iOS Chrome -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <!-- QRCode.js per generare QR in admin -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -710,29 +710,31 @@ input[type=password] { letter-spacing: 3px; }
       </button>
     </div>
 
-    <!-- QR SCANNER -->
+    <!-- QR SCANNER — input capture (funziona su iOS Chrome/Safari/Android) -->
     <div class="card" id="qr-card">
       <div class="card-title">📷 Scansiona QR sede</div>
+
+      <!-- Input nascosto — apre fotocamera nativa iOS/Android -->
+      <input type="file" id="qr-input-file"
+             accept="image/*" capture="environment"
+             style="display:none;"
+             onchange="onQrFileChange(event)">
 
       <!-- Idle -->
       <div id="qr-idle">
         <div class="qr-info" style="padding:16px 10px;">
           <div class="qr-icon">📱</div>
-          <div class="qr-note" style="margin-bottom:14px;">Premi il pulsante e inquadra il QR Code affisso nella tua sede per registrare entrata o uscita.</div>
-          <button class="btn btn-gold" onclick="avviaScanner()">📷 Avvia fotocamera</button>
+          <div class="qr-note" style="margin-bottom:14px;">Premi il pulsante, scatta una foto al QR Code affisso nella tua sede per registrare entrata o uscita.</div>
+          <button class="btn btn-gold" onclick="avviaScanner()">📷 Scansiona QR</button>
           <button class="btn btn-outline" style="margin-top:8px;font-size:13px;" onclick="simulaBadge()">🎯 Simula badge (demo)</button>
         </div>
       </div>
 
-      <!-- Scanner attivo -->
-      <div id="qr-scanning" style="display:none;">
-        <div class="qr-frame-wrap">
-          <video id="qr-video-el" autoplay playsinline muted></video>
-          <div class="qr-aim"></div>
-        </div>
-        <canvas id="qr-canvas-hidden"></canvas>
-        <div class="qr-cam-label" id="qr-cam-status">Inquadra il QR Code della sede…</div>
-        <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="fermaScanner()">✕ Annulla</button>
+      <!-- Elaborazione -->
+      <div id="qr-scanning" style="display:none;text-align:center;padding:24px;">
+        <div style="font-size:36px;margin-bottom:10px;">⏳</div>
+        <div style="font-size:14px;color:var(--text-muted);">Lettura QR in corso…</div>
+        <canvas id="qr-canvas-hidden" style="display:none;"></canvas>
       </div>
 
       <!-- Successo -->
@@ -1741,12 +1743,7 @@ function toast(msg) {
 
 
 // ═══════════════════════════════════════════════════════
-// QR SCANNER (html5-qrcode)
-// ═══════════════════════════════════════════════════════
-
-// Valori validi dentro i QR affissi in sede
-// ═══════════════════════════════════════════════════════
-// QR SCANNER — usa jsQR (leggero, funziona ovunque)
+// QR SCANNER — input[capture] + jsQR (iOS Chrome safe)
 // ═══════════════════════════════════════════════════════
 
 const QR_SEDE_MAP = {
@@ -1756,149 +1753,100 @@ const QR_SEDE_MAP = {
   'GIU': ['giugliano','giu','sede_giugliano','badge_giu'],
 };
 
-let _qrStream = null;
-let _qrRafId  = null;
-let _qrActive = false;
-let _qrCooldown = false;
-
 function matchSedeDaQR(testo) {
-  const t = testo.toLowerCase().replace(/[\s'']/g,'');
+  const t = testo.toLowerCase().replace(/[\s''']/g,'');
   for (const [sede, kws] of Object.entries(QR_SEDE_MAP)) {
-    if (kws.some(k => t.includes(k.replace(/[\s'']/g,'')))) return sede;
+    if (kws.some(k => t.includes(k.replace(/[\s''']/g,'')))) return sede;
   }
   return null;
 }
 
-async function avviaScanner() {
+// Avvia scanner: apre fotocamera nativa tramite <input capture>
+function avviaScanner() {
   const val = getData('dipendente_corrente');
   if (!val) { toast('⚠️ Seleziona prima il tuo nome'); return; }
+  // Resetta il valore così onChange scatta anche se stessa foto
+  const inp = document.getElementById('qr-input-file');
+  inp.value = '';
+  inp.click();
+}
 
-  // Controlla che jsQR sia caricato
-  if (typeof jsQR === 'undefined') {
-    toast('❌ Libreria QR non caricata. Connettiti a internet e ricarica la pagina.');
-    return;
-  }
+// Chiamato quando l'utente ha scattato/scelto la foto
+function onQrFileChange(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
 
   _qrShow('scanning');
-  document.getElementById('qr-cam-status').textContent = 'Apertura fotocamera…';
 
-  try {
-    // Preferisce fotocamera posteriore (environment)
-    const constraints = {
-      video: {
-        facingMode: { ideal: 'environment' },
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      },
-      audio: false
-    };
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      // Disegna su canvas e passa a jsQR
+      const canvas = document.getElementById('qr-canvas-hidden');
+      canvas.width  = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0);
 
-    _qrStream = await navigator.mediaDevices.getUserMedia(constraints);
-    const video = document.getElementById('qr-video-el');
-    video.srcObject = _qrStream;
-    video.onloadedmetadata = () => {
-      video.play();
-      _qrActive = true;
-      document.getElementById('qr-cam-status').textContent = 'Inquadra il QR Code della sede…';
-      _qrLoop();
-    };
+      // Prova prima a dimensione intera
+      let code = _tryDecodeCanvas(canvas, ctx, img.width, img.height);
 
-  } catch(err) {
-    console.error('[QR] Camera error:', err.name, err.message);
-    fermaScanner();
-
-    let msg = '';
-    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-      msg = '❌ Accesso fotocamera negato.\n\nVai nelle impostazioni del browser → abilita la fotocamera per questa pagina, poi ricarica.';
-    } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-      msg = '❌ Nessuna fotocamera trovata su questo dispositivo.';
-    } else if (err.name === 'NotReadableError') {
-      msg = '❌ Fotocamera occupata da un\'altra app. Chiudi le altre app e riprova.';
-    } else if (err.name === 'OverconstrainedError') {
-      // Riprova senza vincoli di risoluzione
-      _riprovanoCam();
-      return;
-    } else {
-      msg = `❌ Errore fotocamera: ${err.message}`;
-    }
-    _qrShow('error');
-    document.getElementById('qr-error-msg').textContent = msg;
-  }
-}
-
-// Fallback senza vincoli di risoluzione
-async function _riprovanoCam() {
-  try {
-    _qrStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-    const video = document.getElementById('qr-video-el');
-    video.srcObject = _qrStream;
-    video.onloadedmetadata = () => {
-      video.play();
-      _qrActive = true;
-      document.getElementById('qr-cam-status').textContent = 'Inquadra il QR Code della sede…';
-      _qrLoop();
-    };
-  } catch(err2) {
-    _qrShow('error');
-    document.getElementById('qr-error-msg').textContent = '❌ Impossibile accedere alla fotocamera.\n' + err2.message;
-  }
-}
-
-function _qrLoop() {
-  if (!_qrActive) return;
-
-  const video  = document.getElementById('qr-video-el');
-  const canvas = document.getElementById('qr-canvas-hidden');
-  const ctx    = canvas.getContext('2d', { willReadFrequently: true });
-
-  if (video.readyState >= video.HAVE_ENOUGH_DATA && video.videoWidth > 0) {
-    canvas.width  = video.videoWidth;
-    canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    try {
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(imgData.data, imgData.width, imgData.height, {
-        inversionAttempts: 'attemptBoth'   // prova entrambe polarità
-      });
-
-      if (code && code.data && !_qrCooldown) {
-        _qrCooldown = true;
-        _onQRFound(code.data);
-        return; // stop loop
+      // Se non trovato, prova scalato a 1024px (migliora accuratezza su foto ad alta risoluzione)
+      if (!code) {
+        const maxDim = 1024;
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w2 = Math.round(img.width * scale);
+        const h2 = Math.round(img.height * scale);
+        canvas.width  = w2;
+        canvas.height = h2;
+        ctx.drawImage(img, 0, 0, w2, h2);
+        code = _tryDecodeCanvas(canvas, ctx, w2, h2);
       }
-    } catch(e) {
-      // ignora errori di lettura frame singolo
-    }
-  }
 
-  _qrRafId = requestAnimationFrame(_qrLoop);
+      if (code) {
+        _onQRFound(code.data);
+      } else {
+        _qrShow('error');
+        document.getElementById('qr-error-msg').textContent =
+          '❌ QR Code non rilevato nella foto.\n\nConsigli:\n• Tieni il telefono fermo\n• Inquadra solo il QR\n• Assicurati che sia ben illuminato\n• Riprova';
+      }
+    };
+    img.onerror = function() {
+      _qrShow('error');
+      document.getElementById('qr-error-msg').textContent = '❌ Impossibile leggere l\'immagine.';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function _tryDecodeCanvas(canvas, ctx, w, h) {
+  try {
+    const imgData = ctx.getImageData(0, 0, w, h);
+    return jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
+  } catch(e) { return null; }
 }
 
 function _onQRFound(rawText) {
-  console.log('[QR] Letto:', rawText);
-
-  fermaScanner(); // spegni camera
-
   const val = getData('dipendente_corrente');
   if (!val) { resetScanner(); return; }
   const dip = getDipFull(val);
 
-  // Riconosci sede
   const sedeQR = matchSedeDaQR(rawText);
 
-  // Se non è un QR sede ma contiene qualcosa, accetta come badge generico
   if (!sedeQR) {
-    // Accetta qualsiasi QR e usa la sede del dipendente
+    // QR non è una sede conosciuta — accetta comunque con sede del dipendente
     _eseguiBadge(dip, dip.sede, rawText, true);
     return;
   }
 
-  // Verifica sede (MULTI può badgiare ovunque)
   if (dip.sede !== 'MULTI' && dip.sede !== sedeQR) {
     _qrShow('error');
     document.getElementById('qr-error-msg').textContent =
-      `⚠️ Sei registrato per ${SEDE_LABEL[dip.sede]||dip.sede},\nma questo QR è della sede ${SEDE_LABEL[sedeQR]||sedeQR}.\n\nContatta l'admin se è un errore.`;
+      '⚠️ Sei registrato per ' + (SEDE_LABEL[dip.sede]||dip.sede) +
+      ',\nma questo QR è della sede ' + (SEDE_LABEL[sedeQR]||sedeQR) +
+      '.\n\nContatta l\'admin se è un errore.';
     return;
   }
 
@@ -1910,39 +1858,31 @@ function _eseguiBadge(dip, sedeQR, rawText, generico) {
   const badges = getData(key, []);
   const lastBadge = badges[badges.length-1];
   const inSede = lastBadge && lastBadge.tipo === 'entrata';
-
   const sedeLabel = SEDE_LABEL[sedeQR] || sedeQR;
   const extra = generico ? ' (QR generico)' : '';
 
   if (!inSede) {
     badgeEntrata();
-    mostraQROk(`Entrata registrata ✅`, `${dip.nome} · ${sedeLabel}${extra}`);
+    mostraQROk('Entrata registrata ✅', dip.nome + ' · ' + sedeLabel + extra);
   } else {
     badgeUscita();
-    mostraQROk(`Uscita registrata ✅`, `${dip.nome} · ${sedeLabel}${extra}`);
+    mostraQROk('Uscita registrata ✅', dip.nome + ' · ' + sedeLabel + extra);
   }
 }
 
 function fermaScanner() {
-  _qrActive = false;
-  if (_qrRafId) { cancelAnimationFrame(_qrRafId); _qrRafId = null; }
-  if (_qrStream) {
-    _qrStream.getTracks().forEach(t => t.stop());
-    _qrStream = null;
-  }
-  const v = document.getElementById('qr-video-el');
-  if (v) { v.srcObject = null; }
+  _qrShow('idle');
 }
 
 function resetScanner() {
-  fermaScanner();
-  _qrCooldown = false;
   _qrShow('idle');
+  const inp = document.getElementById('qr-input-file');
+  if (inp) inp.value = '';
 }
 
 function _qrShow(stato) {
   ['idle','scanning','success','error'].forEach(s => {
-    const el = document.getElementById('qr-'+s);
+    const el = document.getElementById('qr-' + s);
     if (el) el.style.display = (s === stato) ? 'block' : 'none';
   });
 }
