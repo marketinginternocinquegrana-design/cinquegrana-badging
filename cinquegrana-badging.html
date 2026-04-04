@@ -731,29 +731,38 @@ input[type=password] { letter-spacing: 3px; }
 
     <!-- BADGE PIN SEDE -->
     <div class="card" id="qr-card">
-      <div class="card-title">📷 Scansiona QR sede</div>
+      <div class="card-title">📍 Timbra presenza</div>
 
-      <div id="qr-idle" style="text-align:center;padding:10px 0;">
-        <div style="font-size:48px;margin-bottom:10px;">📷</div>
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;">
-          Premi il pulsante e inquadra il QR Code.<br>La lettura è automatica.
+      <!-- Idle: istruzioni + bottone -->
+      <div id="qr-idle" style="text-align:center;padding:6px 0 10px;">
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.7;">
+          Premi il pulsante quando sei in sede.<br>
+          Il GPS verificherà che sei sul posto di lavoro.
         </div>
-        <button class="btn btn-gold" style="font-size:15px;padding:14px;" onclick="avviaScanner()">📷 Avvia fotocamera</button>
-        <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="simulaBadge()">🎯 Simula badge (senza QR)</button>
+        <button class="btn btn-gold" style="font-size:15px;padding:16px;" onclick="avviaGPS()">
+          📍 Timbra con GPS
+        </button>
+        <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="simulaBadge()">
+          🎯 Simula badge (admin test)
+        </button>
       </div>
 
-      <div id="qr-scanning" style="display:none;">
-        <div id="qr-reader" style="width:100%;border-radius:10px;overflow:hidden;"></div>
-        <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="fermaScanner()">✕ Annulla</button>
+      <!-- In attesa GPS -->
+      <div id="qr-scanning" style="display:none;text-align:center;padding:24px;">
+        <div style="font-size:40px;margin-bottom:12px;">📡</div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Rilevamento posizione…</div>
+        <div style="font-size:12px;color:var(--text-muted);">Tieni il telefono all'aperto per un segnale migliore</div>
       </div>
 
+      <!-- Successo -->
       <div id="qr-success" style="display:none;text-align:center;padding:16px;">
         <div style="font-size:40px;margin-bottom:8px;">✅</div>
         <div id="qr-success-msg" style="font-size:15px;font-weight:600;color:var(--green);"></div>
         <div id="qr-success-sub" style="font-size:12px;color:var(--text-muted);margin-top:4px;"></div>
-        <button class="btn btn-outline" style="margin-top:14px;font-size:13px;" onclick="resetScanner()">Scansiona di nuovo</button>
+        <button class="btn btn-outline" style="margin-top:14px;font-size:13px;" onclick="resetScanner()">Timbra di nuovo</button>
       </div>
 
+      <!-- Errore -->
       <div id="qr-error" style="display:none;text-align:center;padding:16px;">
         <div style="font-size:36px;margin-bottom:8px;">⚠️</div>
         <div id="qr-error-msg" style="font-size:13px;color:var(--red);white-space:pre-line;"></div>
@@ -1838,115 +1847,137 @@ function toast(msg) {
 
 
 // ═══════════════════════════════════════════════════════
-// QR SCANNER — html5-qrcode (iOS Safari + Android Chrome)
+// BADGE GPS — verifica posizione prima di timbrare
 // ═══════════════════════════════════════════════════════
 
-const QR_SEDE_MAP = {
-  'OTT': ['ottaviano','ott','sede_ottaviano','SEDE_OTTAVIANO'],
-  'SAN': ['santarpino','sant','san','sede_santarpino','SEDE_SANTARPINO'],
-  'VIL': ['villaricca','vil','sede_villaricca','SEDE_VILLARICCA'],
-  'GIU': ['giugliano','giu','sede_giugliano','SEDE_GIUGLIANO'],
+// Coordinate sedi (lat, lng, raggio in metri)
+const SEDI_GPS = {
+  OTT: { lat: 40.859595, lng: 14.473376, raggio: 200, label: 'Ottaviano' },
+  SAN: { lat: 40.949542, lng: 14.253266, raggio: 200, label: "Sant'Arpino" },
+  VIL: { lat: 40.918636, lng: 14.184529, raggio: 200, label: 'Villaricca' },
+  GIU: { lat: 40.943509, lng: 14.216876, raggio: 200, label: 'Giugliano' },
+  ZEU: { lat: 40.944321, lng: 14.221122, raggio: 200, label: 'Deposito Zeus' },
 };
 
-function matchSedeDaQR(raw) {
-  const t = (raw||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-  for (const [sede, kws] of Object.entries(QR_SEDE_MAP)) {
-    if (kws.some(k => t.includes(k.toLowerCase().replace(/[^a-z0-9]/g,'')))) return sede;
-  }
-  return null;
+// Calcola distanza in metri tra due coordinate (formula Haversine)
+function distanzaMetri(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 }
 
-let _html5QR = null;
+// Trova la sede più vicina alla posizione del dipendente
+function sedePiuVicina(lat, lng) {
+  let best = null, bestDist = Infinity;
+  for (const [id, sede] of Object.entries(SEDI_GPS)) {
+    const d = distanzaMetri(lat, lng, sede.lat, sede.lng);
+    if (d < bestDist) { bestDist = d; best = { id, sede, distanza: Math.round(d) }; }
+  }
+  return best;
+}
 
-function avviaScanner() {
+function avviaGPS() {
   const val = getData('dipendente_corrente');
   if (!val) { toast('⚠️ Seleziona prima il tuo nome'); return; }
+
+  if (!navigator.geolocation) {
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent =
+      '❌ GPS non disponibile su questo dispositivo.';
+    return;
+  }
+
   _qrShow('scanning');
 
-  if (typeof Html5Qrcode === 'undefined') {
-    _qrShow('error');
-    document.getElementById('qr-error-msg').textContent = '❌ Libreria QR non caricata. Connettiti a internet e ricarica la pagina.';
-    return;
-  }
-
-  _html5QR = new Html5Qrcode('qr-reader');
-
-  const config = {
-    fps: 10,
-    qrbox: { width: 220, height: 220 },
-    aspectRatio: 1.0,
-    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
-  };
-
-  _html5QR.start(
-    { facingMode: 'environment' },
-    config,
-    function(decodedText) {
-      _stopScanner();
-      _onQRFound(decodedText);
+  navigator.geolocation.getCurrentPosition(
+    function(pos) { _onPosizione(pos, getDipFull(val)); },
+    function(err) {
+      _qrShow('error');
+      let msg = '❌ Impossibile rilevare la posizione.\n\n';
+      if (err.code === 1) msg += 'Permesso GPS negato.\n\nSu iPhone: Impostazioni → Privacy → Localizzazione → Safari → "Durante l\'uso"';
+      else if (err.code === 2) msg += 'Segnale GPS assente.\nVai all\'aperto e riprova.';
+      else msg += 'Timeout GPS. Riprova.';
+      document.getElementById('qr-error-msg').textContent = msg;
     },
-    function(err) { /* scan in corso, ignora errori frame */ }
-  ).catch(function(err) {
+    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+  );
+}
+
+function _onPosizione(pos, dip) {
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
+  const accuracy = Math.round(pos.coords.accuracy);
+
+  const vicina = sedePiuVicina(lat, lng);
+  const sedeDip = dip.sede; // OTT, SAN, VIL, GIU, MULTI
+
+  // Controlla se il dipendente è in una sede valida
+  let sedeValida = null;
+
+  if (sedeDip === 'MULTI') {
+    // Itinerante: può timbrare in qualsiasi sede entro raggio
+    if (vicina && vicina.distanza <= vicina.sede.raggio) {
+      sedeValida = vicina.id;
+    }
+  } else {
+    // Dipendente fisso: deve essere nella sua sede o nel deposito Zeus
+    const sedePropria = SEDI_GPS[sedeDip];
+    const distSedePropria = sedePropria ? distanzaMetri(lat, lng, sedePropria.lat, sedePropria.lng) : Infinity;
+    const distZeus = distanzaMetri(lat, lng, SEDI_GPS.ZEU.lat, SEDI_GPS.ZEU.lng);
+
+    if (distSedePropria <= (sedePropria ? sedePropria.raggio : 0)) {
+      sedeValida = sedeDip;
+    } else if (distZeus <= SEDI_GPS.ZEU.raggio) {
+      sedeValida = 'ZEU';
+    }
+  }
+
+  if (sedeValida) {
+    const sedeLabel = SEDI_GPS[sedeValida] ? SEDI_GPS[sedeValida].label : sedeValida;
+    _eseguiBadge(dip, sedeValida, sedeLabel, vicina.distanza, accuracy);
+  } else {
+    // Troppo lontano
+    const nomeSedePropria = SEDI_GPS[sedeDip] ? SEDI_GPS[sedeDip].label : sedeDip;
+    const distSedePropria = SEDI_GPS[sedeDip] ?
+      Math.round(distanzaMetri(lat, lng, SEDI_GPS[sedeDip].lat, SEDI_GPS[sedeDip].lng)) : '?';
     _qrShow('error');
     document.getElementById('qr-error-msg').textContent =
-      '❌ Fotocamera non accessibile.\n\nSu iPhone: Impostazioni → Safari → Fotocamera → Consenti\n\nErrore: ' + String(err);
-  });
-}
-
-function _stopScanner() {
-  if (_html5QR) {
-    _html5QR.stop().catch(function(){}).finally(function() {
-      _html5QR.clear();
-      _html5QR = null;
-    });
+      '🚫 Non sei in sede.\n\n' +
+      '📍 Distanza da ' + nomeSedePropria + ': ' + distSedePropria + ' m\n' +
+      '📡 Precisione GPS: ±' + accuracy + ' m\n\n' +
+      'Devi essere entro 200 m dalla sede per timbrare.\n' +
+      'Se sei in sede e non funziona, vai all\'aperto e riprova.';
   }
 }
 
-function fermaScanner() { _stopScanner(); _qrShow('idle'); }
-function resetScanner()  { _stopScanner(); _qrShow('idle'); }
-
-function _onQRFound(rawText) {
-  const val = getData('dipendente_corrente');
-  if (!val) { resetScanner(); return; }
-  const dip = getDipFull(val);
-  const sedeQR = matchSedeDaQR(rawText);
-
-  if (!sedeQR) {
-    _eseguiBadge(dip, dip.sede, true);
-    return;
-  }
-  if (dip.sede !== 'MULTI' && dip.sede !== sedeQR) {
-    _qrShow('error');
-    document.getElementById('qr-error-msg').textContent =
-      '⚠️ Sei registrato per ' + (SEDE_LABEL[dip.sede]||dip.sede) +
-      ',\nma questo QR è della sede ' + (SEDE_LABEL[sedeQR]||sedeQR) +
-      '.\n\nContatta l\'admin se è un errore.';
-    return;
-  }
-  _eseguiBadge(dip, sedeQR, false);
-}
-
-function _eseguiBadge(dip, sedeId, generico) {
+function _eseguiBadge(dip, sedeId, sedeLabel, distanza, accuracy) {
   const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
   const badges = getData(key, []);
   const lastBadge = badges[badges.length-1];
   const inSede = lastBadge && lastBadge.tipo === 'entrata';
-  const sedeLabel = SEDE_LABEL[sedeId] || sedeId;
+  const infoGps = ' · 📍' + distanza + 'm';
   if (!inSede) {
     badgeEntrata();
-    mostraQROk('Entrata registrata ✅', dip.nome + ' · ' + sedeLabel);
+    mostraQROk('Entrata registrata ✅', dip.nome + ' · ' + sedeLabel + infoGps);
   } else {
     badgeUscita();
-    mostraQROk('Uscita registrata ✅', dip.nome + ' · ' + sedeLabel);
+    mostraQROk('Uscita registrata ✅', dip.nome + ' · ' + sedeLabel + infoGps);
   }
 }
+
+function avviaScanner() { avviaGPS(); }
+function fermaScanner()  { _qrShow('idle'); }
+function resetScanner()  { _qrShow('idle'); }
 
 function _qrShow(stato) {
   ['idle','scanning','success','error'].forEach(s => {
     const el = document.getElementById('qr-' + s);
     if (el) el.style.display = (s === stato) ? 'block' : 'none';
   });
-  if (stato !== 'scanning') _stopScanner();
 }
 
 function mostraQROk(titolo, sub) {
