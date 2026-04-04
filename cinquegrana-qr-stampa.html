@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Code Sedi — Arredamenti Cinquegrana</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #fff; color: #222; }
+  .header { text-align: center; padding: 30px 20px 10px; border-bottom: 2px solid #C8A96E; margin-bottom: 20px; }
+  .header h1 { font-size: 26px; color: #222; }
+  .header p  { font-size: 13px; color: #777; margin-top: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .sede {
+    text-align: center;
+    padding: 30px 20px;
+    border: 1px solid #ddd;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .sede h2 { font-size: 20px; margin-bottom: 4px; color: #C8A96E; }
+  .sede p  { font-size: 12px; color: #888; margin-top: 10px; line-height: 1.5; }
+  .sede .code { font-family: monospace; font-size: 10px; color: #bbb; margin-top: 6px; }
+  .qr-wrap {
+    display: inline-block;
+    padding: 12px;
+    border: 2px solid #C8A96E;
+    border-radius: 10px;
+    margin: 14px 0;
+  }
+  .qr-wrap img { display: block; }
+  .no-print { text-align: center; padding: 24px; }
+  .no-print button {
+    padding: 14px 36px;
+    font-size: 16px;
+    background: #C8A96E;
+    color: #111;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: Georgia, serif;
+  }
+  @media print {
+    .no-print { display: none !important; }
+    .sede { border-color: #ccc; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="no-print">
+  <div style="padding:20px;text-align:center;font-size:14px;color:#555;margin-bottom:10px;">
+    Questa pagina contiene i QR Code da affiggere in ogni sede.<br>
+    Stampa e ritaglia un QR per ogni sede.
+  </div>
+  <button onclick="window.print()">🖨 Stampa tutti i QR</button>
+</div>
+
+<div class="header">
+  <h1>Arredamenti Cinquegrana · Scavolini</h1>
+  <p>QR Code per timbratura presenze — scansiona con l'app Badging</p>
+</div>
+
+<div class="grid">
+
+  <div class="sede">
+    <h2>🏠 Ottaviano</h2>
+    <div class="qr-wrap">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=SEDE_OTTAVIANO&ecc=H&margin=8" width="220" height="220" alt="QR Ottaviano">
+    </div>
+    <p>Scansiona con l'app Badging<br>per registrare entrata/uscita</p>
+    <div class="code">SEDE_OTTAVIANO</div>
+  </div>
+
+  <div class="sede">
+    <h2>🏠 Sant'Arpino</h2>
+    <div class="qr-wrap">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=SEDE_SANTARPINO&ecc=H&margin=8" width="220" height="220" alt="QR Sant'Arpino">
+    </div>
+    <p>Scansiona con l'app Badging<br>per registrare entrata/uscita</p>
+    <div class="code">SEDE_SANTARPINO</div>
+  </div>
+
+  <div class="sede">
+    <h2>🏠 Villaricca</h2>
+    <div class="qr-wrap">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=SEDE_VILLARICCA&ecc=H&margin=8" width="220" height="220" alt="QR Villaricca">
+    </div>
+    <p>Scansiona con l'app Badging<br>per registrare entrata/uscita</p>
+    <div class="code">SEDE_VILLARICCA</div>
+  </div>
+
+  <div class="sede">
+    <h2>🏠 Giugliano</h2>
+    <div class="qr-wrap">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=SEDE_GIUGLIANO&ecc=H&margin=8" width="220" height="220" alt="QR Giugliano">
+    </div>
+    <p>Scansiona con l'app Badging<br>per registrare entrata/uscita</p>
+    <div class="code">SEDE_GIUGLIANO</div>
+  </div>
+
+</div>
+
+</body>
+</html>
