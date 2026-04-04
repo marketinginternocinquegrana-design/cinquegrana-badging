@@ -914,6 +914,36 @@ input[type=password] { letter-spacing: 3px; }
 
     <!-- TOOLS -->
     <div id="at-tools" class="admin-tab-content" style="display:none;">
+
+      <!-- GOOGLE SHEETS CONFIG -->
+      <div class="card">
+        <div class="card-title">🔗 Google Sheets — presenze condivise</div>
+        <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:12px;">
+          Collega un Google Sheet per vedere i badge di <strong>tutti i dispositivi</strong> in tempo reale.<br>
+          Senza collegamento, ogni telefono salva solo i propri badge.
+        </p>
+        <input type="text" id="sheet-url-input" placeholder="Incolla qui l'URL del tuo Apps Script…" style="margin-bottom:8px;font-size:12px;">
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <button class="btn btn-gold" style="flex:1;font-size:13px;" onclick="salvaSheetUrl()">💾 Salva</button>
+          <button class="btn btn-outline" style="flex:1;font-size:13px;" onclick="testSheetUrl()">🔌 Test</button>
+        </div>
+        <div id="sheet-status" style="font-size:12px;min-height:18px;"></div>
+
+        <hr class="divider">
+        <div style="font-size:12px;color:var(--gold);font-weight:600;margin-bottom:8px;">📋 Codice Apps Script da copiare</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;line-height:1.6;">
+          1. Vai su <strong>script.google.com</strong> → Nuovo progetto<br>
+          2. Cancella tutto e incolla il codice qui sotto<br>
+          3. <em>Distribuisci → Nuova distribuzione → App web</em><br>
+          4. Accesso: <strong>Chiunque</strong> → Distribuisci → copia l'URL<br>
+          5. Incolla l'URL qui sopra e premi Salva
+        </div>
+        <textarea id="apps-script-code" readonly
+          style="width:100%;height:140px;background:var(--dark3);border:1px solid rgba(200,169,110,0.2);border-radius:8px;color:var(--text-muted);font-size:10px;font-family:monospace;padding:8px;resize:none;line-height:1.4;"
+        ></textarea>
+        <button class="btn btn-outline" style="margin-top:8px;font-size:12px;" onclick="copiaAppsScript()">📋 Copia codice</button>
+      </div>
+
       <div class="card">
         <div class="card-title">🗑 Reset presenze</div>
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Cancella tutti i badge della giornata. Usare a inizio giornata.</p>
@@ -934,6 +964,8 @@ input[type=password] { letter-spacing: 3px; }
       </div>
 
 
+      <div class="card">
+        <div class="card-title">🧪 Genera dati demo</div>
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Crea 30 giorni di badge fittizi per testare il report merito.</p>
         <button class="btn btn-blue" onclick="generaDemo()">Genera dati demo</button>
       </div>
@@ -1020,6 +1052,24 @@ function getAllKeys() {
     keys.push(localStorage.key(i));
   }
   return keys;
+}
+
+// ═══════════════════════════════════════════════════════
+// GOOGLE SHEETS API
+// ═══════════════════════════════════════════════════════
+async function apiCall(params={}, body=null) {
+  const url = getData('sheet_url','');
+  if (!url) return null;
+  try {
+    if (body) {
+      const r = await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(body) });
+      return await r.json();
+    } else {
+      const qs = new URLSearchParams(params).toString();
+      const r = await fetch(url + (qs ? '?'+qs : ''));
+      return await r.json();
+    }
+  } catch(e) { return null; }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1191,6 +1241,17 @@ function badgeEntrata() {
 
   badges.push(record);
   setData(key, badges);
+
+  // Invia a Google Sheets se configurato
+  const sheetUrl = getData('sheet_url','');
+  if (sheetUrl) {
+    apiCall({}, {
+      action:'badge', nome:dip.nome, sede:dip.sede, tipo:'entrata',
+      ore:record.ore, data:getTodayKey(),
+      ritardo: record.ritardo||0, ts: record.ts
+    });
+  }
+
   aggiornaStatusDip(dip);
   mostraStorico(dip);
 }
@@ -1235,6 +1296,17 @@ function badgeUscita() {
 
   badges.push(record);
   setData(key, badges);
+
+  // Invia a Google Sheets se configurato
+  const sheetUrl = getData('sheet_url','');
+  if (sheetUrl) {
+    apiCall({}, {
+      action:'badge', nome:dip.nome, sede:dip.sede, tipo:'uscita',
+      ore:record.ore, data:getTodayKey(),
+      anticipo: record.anticipo||0, ts: record.ts
+    });
+  }
+
   aggiornaStatusDip(dip);
   mostraStorico(dip);
 }
@@ -1431,36 +1503,62 @@ function adminTab(t) {
 // ═══════════════════════════════════════════════════════
 // ADMIN PRESENZE
 // ═══════════════════════════════════════════════════════
-function refreshAdmin() {
+async function refreshAdmin() {
   const now = new Date();
   const today = now.getDay();
+  const sheetUrl = getData('sheet_url','');
+  let badgeMap = {}; // nome_normalizzato -> [badge]
+
+  if (sheetUrl) {
+    document.getElementById('lista-dipendenti-oggi').innerHTML =
+      '<p style="color:var(--text-muted);font-size:13px;">⏳ Caricamento da Sheets…</p>';
+    const res = await apiCall({ action:'presenze', data: getTodayKey() });
+    if (res && res.ok && Array.isArray(res.data)) {
+      res.data.forEach(row => {
+        const k = row.nome.replace(/\s+/g,'_').toLowerCase();
+        if (!badgeMap[k]) badgeMap[k] = [];
+        badgeMap[k].push(row);
+      });
+    }
+  } else {
+    // fallback: localStorage
+    DIPENDENTI.forEach(dip => {
+      const k = dip.nome.replace(/\s+/g,'_').toLowerCase();
+      badgeMap[k] = getData(getBadgeKey(k), []);
+    });
+  }
+
   let presenti = 0, alerts = 0, totalBadge = 0;
-  let html = '';
+  let rows = '';
 
   DIPENDENTI.forEach(dip => {
     const riposo = (dip.riposo||[]).includes(today);
-    const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
-    const badges = getData(key, []);
+    const k = dip.nome.replace(/\s+/g,'_').toLowerCase();
+    const badges = badgeMap[k] || [];
     totalBadge += badges.length;
 
-    const lastBadge = badges[badges.length-1];
-    const inSede = lastBadge && lastBadge.tipo === 'entrata';
+    const sorted = [...badges].sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const last = sorted[sorted.length-1];
+    const inSede = last && last.tipo === 'entrata';
     if (inSede) presenti++;
 
-    const hasAlert = badges.some(b => b.ritardo || b.anticipo);
+    const hasAlert = badges.some(b => (b.ritardo||0)>0 || (b.anticipo||0)>0);
     if (hasAlert) alerts++;
 
     const initials = dip.nome.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     const statusEmoji = riposo ? '😴' : inSede ? '🟢' : badges.length ? '🔴' : '⚪';
+    const orari = sorted.map(b =>
+      `<span style="font-size:10px;color:${b.tipo==='entrata'?'var(--green)':'var(--red)'};">${b.tipo==='entrata'?'▲':'▼'}${b.ore||''}</span>`
+    ).join(' ');
 
-    html += `<div class="emp-row">
+    rows += `<div class="emp-row">
       <div class="emp-avatar">${initials}</div>
       <div style="flex:1">
         <div class="emp-name">${dip.nome}</div>
         <div class="emp-sede">
           <span class="sede-tag ${SEDE_CLASS[dip.sede]||''}">${SEDE_LABEL[dip.sede]||dip.sede}</span>
-          ${riposo ? ' · Riposo' : ''}
-          ${badges.length ? ` · ${badges.length} badge` : ''}
+          ${riposo?' · <em>Riposo</em>':''}
+          ${orari?' · '+orari:''}
         </div>
       </div>
       <span class="emp-status">${statusEmoji}</span>
@@ -1470,7 +1568,8 @@ function refreshAdmin() {
   document.getElementById('s-presenti').textContent = presenti;
   document.getElementById('s-alert').textContent = getAlertsOggi().length;
   document.getElementById('s-badge').textContent = totalBadge;
-  document.getElementById('lista-dipendenti-oggi').innerHTML = html || '<p style="color:var(--text-muted);font-size:13px;">Nessun dato</p>';
+  document.getElementById('lista-dipendenti-oggi').innerHTML =
+    rows || '<p style="color:var(--text-muted);font-size:13px;">Nessun dato</p>';
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2009,10 +2108,100 @@ function stampaQR(label, code) {
 }
 
 // ═══════════════════════════════════════════════════════
+// GOOGLE SHEETS CONFIG FUNCTIONS
+// ═══════════════════════════════════════════════════════
+const APPS_SCRIPT_CODE = `const SHEET_NAME = 'Badge';
+
+function doGet(e) {
+  const a = (e.parameter.action||'');
+  if (a==='ping') return ok({sheet:SpreadsheetApp.getActiveSpreadsheet().getName()});
+  if (a==='presenze') return ok({data:getPresenze(e.parameter.data||today())});
+  return ok({msg:'Cinquegrana Badging API OK'});
+}
+
+function doPost(e) {
+  try {
+    const p = JSON.parse(e.postData.contents);
+    if (p.action==='badge') { salvaBadge(p); return ok({saved:true}); }
+    return ok({msg:'unknown'});
+  } catch(err) { return err_(err.message); }
+}
+
+function salvaBadge(p) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh) {
+    sh = ss.insertSheet(SHEET_NAME);
+    sh.appendRow(['Data','Nome','Sede','Tipo','Ore','Ritardo','Anticipo','Timestamp']);
+    sh.setFrozenRows(1);
+  }
+  sh.appendRow([p.data||today(),p.nome,p.sede,p.tipo,p.ore,p.ritardo||0,p.anticipo||0,p.ts||Date.now()]);
+}
+
+function getPresenze(data) {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  if (!sh) return [];
+  const rows = sh.getDataRange().getValues();
+  const out = [];
+  for (let i=1;i<rows.length;i++) {
+    const [d,nome,sede,tipo,ore,ritardo,anticipo,ts] = rows[i];
+    if (String(d).trim()===String(data).trim())
+      out.push({nome,sede,tipo,ore,ritardo,anticipo,ts});
+  }
+  return out;
+}
+
+function today() {
+  return Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyy-MM-dd');
+}
+function ok(d)   { return ContentService.createTextOutput(JSON.stringify({ok:true,...d})).setMimeType(ContentService.MimeType.JSON); }
+function err_(m) { return ContentService.createTextOutput(JSON.stringify({ok:false,error:m})).setMimeType(ContentService.MimeType.JSON); }`;
+
+function initSheetConfig() {
+  const url = getData('sheet_url','');
+  const inp = document.getElementById('sheet-url-input');
+  if (inp && url) inp.value = url;
+  const ta = document.getElementById('apps-script-code');
+  if (ta) ta.value = APPS_SCRIPT_CODE;
+}
+
+function salvaSheetUrl() {
+  const url = (document.getElementById('sheet-url-input').value||'').trim();
+  if (!url) { toast("Incolla prima l'URL"); return; }
+  setData('sheet_url', url);
+  document.getElementById('sheet-status').innerHTML =
+    '<span style="color:var(--green);">✅ Salvato. Premi Test per verificare.</span>';
+  toast('✅ URL salvato!');
+}
+
+async function testSheetUrl() {
+  const url = getData('sheet_url','');
+  if (!url) { toast("Prima salva l'URL"); return; }
+  const st = document.getElementById('sheet-status');
+  st.innerHTML = '<span style="color:var(--text-muted);">⏳ Test…</span>';
+  const res = await apiCall({ action:'ping' });
+  if (res && res.ok) {
+    st.innerHTML = '<span style="color:var(--green);">✅ Connesso! Foglio: '+( res.sheet||'OK')+'</span>';
+  } else {
+    st.innerHTML = '<span style="color:var(--red);">❌ Errore — controlla URL e permessi</span>';
+  }
+}
+
+function copiaAppsScript() {
+  const ta = document.getElementById('apps-script-code');
+  if (!ta) return;
+  navigator.clipboard.writeText(ta.value).then(
+    () => toast('✅ Codice copiato! Incollalo su script.google.com'),
+    () => { ta.select(); document.execCommand('copy'); toast('✅ Copiato!'); }
+  );
+}
+
+// ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   initDipendente();
+  initSheetConfig();
 });
 
 </script>
