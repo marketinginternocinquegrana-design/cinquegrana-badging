@@ -593,8 +593,8 @@ input[type=password] { letter-spacing: 3px; }
 .pin-ok    { background: rgba(82,183,136,0.12); border-color: rgba(82,183,136,0.3); color: var(--green); font-size:26px; }
 
 </style>
-<!-- jsQR: decodifica QR da immagine/canvas — funziona su tutti i browser incluso iOS Chrome -->
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<!-- html5-qrcode: libreria QR testata su iOS Safari, Android Chrome -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <!-- QRCode.js per generare QR in admin -->
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
@@ -733,46 +733,20 @@ input[type=password] { letter-spacing: 3px; }
     <div class="card" id="qr-card">
       <div class="card-title">📷 Scansiona QR sede</div>
 
-      <!-- Idle -->
       <div id="qr-idle" style="text-align:center;padding:10px 0;">
         <div style="font-size:48px;margin-bottom:10px;">📷</div>
         <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;">
-          Premi il pulsante, inquadra il QR Code e premi <strong style="color:var(--gold)">📸 Leggi QR</strong>.
+          Premi il pulsante e inquadra il QR Code.<br>La lettura è automatica.
         </div>
-        <button class="btn btn-gold" style="font-size:15px;padding:14px;" onclick="avviaScanner()">
-          📷 Avvia fotocamera
-        </button>
-        <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="simulaBadge()">
-          🎯 Simula badge (senza QR)
-        </button>
+        <button class="btn btn-gold" style="font-size:15px;padding:14px;" onclick="avviaScanner()">📷 Avvia fotocamera</button>
+        <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="simulaBadge()">🎯 Simula badge (senza QR)</button>
       </div>
 
-      <!-- Videocamera live + bottone scatta -->
       <div id="qr-scanning" style="display:none;">
-        <div style="position:relative;border-radius:10px;overflow:hidden;background:#000;margin-bottom:12px;">
-          <video id="qr-video-el" autoplay playsinline muted
-            style="width:100%;max-height:280px;object-fit:cover;display:block;"></video>
-          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-            width:180px;height:180px;border:3px solid var(--gold);border-radius:10px;
-            box-shadow:0 0 0 9999px rgba(0,0,0,0.5);pointer-events:none;"></div>
-        </div>
-        <canvas id="qr-canvas-hidden" style="position:fixed;left:-9999px;top:-9999px;"></canvas>
-        <p style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:10px;">
-          Centra il QR nel mirino dorato, poi premi il pulsante
-        </p>
-        <button class="btn btn-gold" style="font-size:15px;padding:14px;margin-bottom:8px;" onclick="scattaELeggi()">
-          📸 Leggi QR
-        </button>
-        <button class="btn btn-outline" style="font-size:13px;" onclick="fermaScanner()">✕ Annulla</button>
+        <div id="qr-reader" style="width:100%;border-radius:10px;overflow:hidden;"></div>
+        <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="fermaScanner()">✕ Annulla</button>
       </div>
 
-      <!-- Elaborazione -->
-      <div id="qr-processing" style="display:none;text-align:center;padding:24px;">
-        <div style="font-size:36px;margin-bottom:10px;">⏳</div>
-        <div style="font-size:14px;color:var(--text-muted);">Lettura in corso…</div>
-      </div>
-
-      <!-- Successo -->
       <div id="qr-success" style="display:none;text-align:center;padding:16px;">
         <div style="font-size:40px;margin-bottom:8px;">✅</div>
         <div id="qr-success-msg" style="font-size:15px;font-weight:600;color:var(--green);"></div>
@@ -780,7 +754,6 @@ input[type=password] { letter-spacing: 3px; }
         <button class="btn btn-outline" style="margin-top:14px;font-size:13px;" onclick="resetScanner()">Scansiona di nuovo</button>
       </div>
 
-      <!-- Errore -->
       <div id="qr-error" style="display:none;text-align:center;padding:16px;">
         <div style="font-size:36px;margin-bottom:8px;">⚠️</div>
         <div id="qr-error-msg" style="font-size:13px;color:var(--red);white-space:pre-line;"></div>
@@ -1865,7 +1838,7 @@ function toast(msg) {
 
 
 // ═══════════════════════════════════════════════════════
-// QR SCANNER — video live + scatta frame + BarcodeDetector/jsQR
+// QR SCANNER — html5-qrcode (iOS Safari + Android Chrome)
 // ═══════════════════════════════════════════════════════
 
 const QR_SEDE_MAP = {
@@ -1883,114 +1856,54 @@ function matchSedeDaQR(raw) {
   return null;
 }
 
-let _qrStream = null;
+let _html5QR = null;
 
 function avviaScanner() {
   const val = getData('dipendente_corrente');
   if (!val) { toast('⚠️ Seleziona prima il tuo nome'); return; }
-
   _qrShow('scanning');
 
-  const constraints = {
-    video: {
-      facingMode: { ideal: 'environment' },
-      width:  { ideal: 1920 },
-      height: { ideal: 1080 }
-    }
-  };
-
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then(function(stream) {
-      _qrStream = stream;
-      const video = document.getElementById('qr-video-el');
-      video.srcObject = stream;
-      video.play().catch(function(){});
-    })
-    .catch(function(err) {
-      _qrShow('error');
-      document.getElementById('qr-error-msg').textContent =
-        '❌ Fotocamera non accessibile.\n\nSu iPhone:\nImpostazioni → Safari → Fotocamera → Consenti\n\nErrore: ' + err.message;
-    });
-}
-
-async function scattaELeggi() {
-  const video = document.getElementById('qr-video-el');
-  if (!video || !video.videoWidth) {
-    toast('⚠️ Fotocamera non ancora pronta, riprova');
+  if (typeof Html5Qrcode === 'undefined') {
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent = '❌ Libreria QR non caricata. Connettiti a internet e ricarica la pagina.';
     return;
   }
 
-  _qrShowStato('processing');
+  _html5QR = new Html5Qrcode('qr-reader');
 
-  const W = video.videoWidth;
-  const H = video.videoHeight;
+  const config = {
+    fps: 10,
+    qrbox: { width: 220, height: 220 },
+    aspectRatio: 1.0,
+    supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+  };
 
-  // Cattura frame ad alta risoluzione
-  const canvas = document.createElement('canvas');
-  canvas.width = W;
-  canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, W, H);
-
-  let found = null;
-
-  // Metodo 1: BarcodeDetector nativo (iOS 17+, Chrome Android)
-  if (typeof BarcodeDetector !== 'undefined') {
-    try {
-      const bd = new BarcodeDetector({ formats: ['qr_code'] });
-      const codes = await bd.detect(canvas);
-      if (codes && codes.length > 0) found = codes[0].rawValue;
-    } catch(e) {}
-  }
-
-  // Metodo 2: jsQR a varie scale
-  if (!found && typeof jsQR !== 'undefined') {
-    const scales = [1, 0.75, 0.5, 1.5];
-    for (const s of scales) {
-      if (found) break;
-      const w2 = Math.round(W * s);
-      const h2 = Math.round(H * s);
-      const c2 = document.createElement('canvas');
-      c2.width = w2; c2.height = h2;
-      c2.getContext('2d').drawImage(canvas, 0, 0, w2, h2);
-      try {
-        const d = c2.getContext('2d').getImageData(0, 0, w2, h2);
-        const res = jsQR(d.data, w2, h2, { inversionAttempts: 'attemptBoth' });
-        if (res && res.data) found = res.data;
-      } catch(e) {}
-    }
-  }
-
-  if (found) {
-    _stopCamera();
-    _onQRFound(found);
-  } else {
-    // Torna alla videocamera per riprovare
-    _qrShowStato('scanning');
-    toast('❌ QR non letto — avvicinati e ripremi 📸');
-  }
-}
-
-function _stopCamera() {
-  if (_qrStream) { _qrStream.getTracks().forEach(t => t.stop()); _qrStream = null; }
-  const v = document.getElementById('qr-video-el');
-  if (v) v.srcObject = null;
-}
-
-function fermaScanner() { _stopCamera(); _qrShow('idle'); }
-function resetScanner()  { _stopCamera(); _qrShow('idle'); }
-
-function _qrShowStato(stato) {
-  ['idle','scanning','processing','success','error'].forEach(s => {
-    const el = document.getElementById('qr-' + s);
-    if (el) el.style.display = (s === stato) ? 'block' : 'none';
+  _html5QR.start(
+    { facingMode: 'environment' },
+    config,
+    function(decodedText) {
+      _stopScanner();
+      _onQRFound(decodedText);
+    },
+    function(err) { /* scan in corso, ignora errori frame */ }
+  ).catch(function(err) {
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent =
+      '❌ Fotocamera non accessibile.\n\nSu iPhone: Impostazioni → Safari → Fotocamera → Consenti\n\nErrore: ' + String(err);
   });
 }
 
-function _qrShow(stato) {
-  _qrShowStato(stato);
-  if (stato !== 'scanning' && stato !== 'processing') _stopCamera();
+function _stopScanner() {
+  if (_html5QR) {
+    _html5QR.stop().catch(function(){}).finally(function() {
+      _html5QR.clear();
+      _html5QR = null;
+    });
+  }
 }
+
+function fermaScanner() { _stopScanner(); _qrShow('idle'); }
+function resetScanner()  { _stopScanner(); _qrShow('idle'); }
 
 function _onQRFound(rawText) {
   const val = getData('dipendente_corrente');
@@ -2026,6 +1939,14 @@ function _eseguiBadge(dip, sedeId, generico) {
     badgeUscita();
     mostraQROk('Uscita registrata ✅', dip.nome + ' · ' + sedeLabel);
   }
+}
+
+function _qrShow(stato) {
+  ['idle','scanning','success','error'].forEach(s => {
+    const el = document.getElementById('qr-' + s);
+    if (el) el.style.display = (s === stato) ? 'block' : 'none';
+  });
+  if (stato !== 'scanning') _stopScanner();
 }
 
 function mostraQROk(titolo, sub) {
