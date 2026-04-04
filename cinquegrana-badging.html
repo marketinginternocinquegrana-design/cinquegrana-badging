@@ -1893,18 +1893,67 @@ function avviaGPS() {
 
   _qrShow('scanning');
 
+  // Aggiorna messaggio con countdown e istruzioni
+  let secondi = 0;
+  const scanEl = document.getElementById('qr-scanning');
+  const timerEl = document.createElement('div');
+  timerEl.id = 'gps-timer';
+  timerEl.style.cssText = 'margin-top:14px;font-size:12px;color:var(--text-muted);';
+  if (scanEl) scanEl.appendChild(timerEl);
+
+  const countdown = setInterval(function() {
+    secondi++;
+    if (!document.getElementById('gps-timer')) { clearInterval(countdown); return; }
+    if (secondi < 10) {
+      timerEl.textContent = 'Attesa segnale GPS… ' + secondi + 's';
+    } else if (secondi < 20) {
+      timerEl.innerHTML = 'Segnale lento… ' + secondi + 's<br><small>Se bloccato: Impostazioni → Safari → Localizzazione → Consenti</small>';
+    } else {
+      clearInterval(countdown);
+      // Fallback: se dopo 20s non risponde, offri timbra senza GPS
+      timerEl.innerHTML = '⏱ GPS non risponde.<br>' +
+        '<button onclick="timbraForzato()" style="margin-top:8px;padding:8px 16px;background:var(--orange);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">⚠️ Timbra senza verifica GPS</button>';
+    }
+  }, 1000);
+
+  const dip = getDipFull(val);
+
   navigator.geolocation.getCurrentPosition(
-    function(pos) { _onPosizione(pos, getDipFull(val)); },
+    function(pos) {
+      clearInterval(countdown);
+      const t = document.getElementById('gps-timer');
+      if (t) t.remove();
+      _onPosizione(pos, dip);
+    },
     function(err) {
+      clearInterval(countdown);
+      const t = document.getElementById('gps-timer');
+      if (t) t.remove();
       _qrShow('error');
-      let msg = '❌ Impossibile rilevare la posizione.\n\n';
-      if (err.code === 1) msg += 'Permesso GPS negato.\n\nSu iPhone: Impostazioni → Privacy → Localizzazione → Safari → "Durante l\'uso"';
-      else if (err.code === 2) msg += 'Segnale GPS assente.\nVai all\'aperto e riprova.';
-      else msg += 'Timeout GPS. Riprova.';
+      let msg = '❌ GPS non disponibile.\n\n';
+      if (err.code === 1) {
+        msg += 'Permesso negato.\n\n' +
+          '📱 iPhone: Impostazioni → Privacy e sicurezza → Localizzazione → Safari → "Mentre usi l\'app"\n\n' +
+          'Poi ricarica la pagina e riprova.';
+      } else if (err.code === 2) {
+        msg += 'Segnale assente. Vai all\'aperto e riprova.';
+      } else {
+        msg += 'Timeout (codice ' + err.code + '). Riprova all\'aperto.';
+      }
       document.getElementById('qr-error-msg').textContent = msg;
     },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 }
   );
+}
+
+// Timbra senza GPS (per emergenza o permesso negato)
+function timbraForzato() {
+  const val = getData('dipendente_corrente');
+  if (!val) return;
+  const dip = getDipFull(val);
+  const sedeId = dip.sede === 'MULTI' ? 'MULTI' : dip.sede;
+  const sedeLabel = SEDI_GPS[sedeId] ? SEDI_GPS[sedeId].label : (SEDE_LABEL[sedeId] || sedeId);
+  _eseguiBadge(dip, sedeId, sedeLabel, null, null);
 }
 
 function _onPosizione(pos, dip) {
@@ -1959,7 +2008,7 @@ function _eseguiBadge(dip, sedeId, sedeLabel, distanza, accuracy) {
   const badges = getData(key, []);
   const lastBadge = badges[badges.length-1];
   const inSede = lastBadge && lastBadge.tipo === 'entrata';
-  const infoGps = ' · 📍' + distanza + 'm';
+  const infoGps = distanza !== null ? ' · 📍' + distanza + 'm' : ' · ⚠️ GPS non verificato';
   if (!inSede) {
     badgeEntrata();
     mostraQROk('Entrata registrata ✅', dip.nome + ' · ' + sedeLabel + infoGps);
