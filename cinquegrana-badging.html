@@ -1058,49 +1058,30 @@ function getAllKeys() {
 // GOOGLE SHEETS API
 // ═══════════════════════════════════════════════════════
 async function apiCall(params={}, body=null) {
-  const url = getData('sheet_url','');
-  if (!url) return null;
+  const base = getData('sheet_url','');
+  if (!base) return null;
   try {
     if (body) {
-      await fetch(url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(body) });
+      // POST via no-cors — Google riceve il dato, non possiamo leggere risposta (normale)
+      await fetch(base, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(body)
+      });
       return { ok: true };
     } else {
-      return await jsonpCall(url, params);
+      // GET via proxy CORS pubblico
+      const parts = [];
+      for (const k in (params||{})) parts.push(encodeURIComponent(k)+'='+encodeURIComponent(params[k]));
+      const targetUrl = base + (parts.length ? '?' + parts.join('&') : '');
+      const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(targetUrl);
+      const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
+      if (!r.ok) return null;
+      const wrapper = await r.json();
+      return JSON.parse(wrapper.contents);
     }
   } catch(e) { return null; }
-}
-
-function jsonpCall(url, params) {
-  return new Promise(function(resolve) {
-    var cbName = 'gs_' + Date.now() + '_' + Math.floor(Math.random()*99999);
-    var sc = null;
-    var done = false;
-    var timer = setTimeout(function() {
-      if (done) return; done = true;
-      delete window[cbName];
-      if (sc && sc.parentNode) sc.parentNode.removeChild(sc);
-      resolve(null);
-    }, 10000);
-    window[cbName] = function(data) {
-      if (done) return; done = true;
-      clearTimeout(timer);
-      delete window[cbName];
-      if (sc && sc.parentNode) sc.parentNode.removeChild(sc);
-      resolve(data);
-    };
-    var parts = [];
-    for (var k in (params||{})) parts.push(encodeURIComponent(k)+'='+encodeURIComponent(params[k]));
-    parts.push('callback='+cbName);
-    sc = document.createElement('script');
-    sc.src = url + '?' + parts.join('&');
-    sc.onerror = function() {
-      if (done) return; done = true;
-      clearTimeout(timer);
-      delete window[cbName];
-      resolve(null);
-    };
-    document.head.appendChild(sc);
-  });
 }
 
 // ═══════════════════════════════════════════════════════
