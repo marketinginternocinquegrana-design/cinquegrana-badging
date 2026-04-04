@@ -573,6 +573,25 @@ input[type=password] { letter-spacing: 3px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .badge-btn { padding: 16px 6px; font-size: 12px; }
 }
+
+/* ═══ PIN KEYPAD ═══ */
+.pin-key {
+  background: var(--dark3);
+  border: 1px solid rgba(200,169,110,0.2);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  padding: 18px 10px;
+  cursor: pointer;
+  transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.pin-key:active { background: var(--mid); transform: scale(0.94); }
+.pin-clear { background: rgba(224,82,82,0.12); border-color: rgba(224,82,82,0.3); color: var(--red); }
+.pin-ok    { background: rgba(82,183,136,0.12); border-color: rgba(82,183,136,0.3); color: var(--green); font-size:26px; }
+
 </style>
 <!-- jsQR: decodifica QR da immagine/canvas — funziona su tutti i browser incluso iOS Chrome -->
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
@@ -710,34 +729,42 @@ input[type=password] { letter-spacing: 3px; }
       </button>
     </div>
 
-    <!-- QR SCANNER — foto con input[capture] + jsQR -->
+    <!-- BADGE PIN SEDE -->
     <div class="card" id="qr-card">
       <div class="card-title">📷 Scansiona QR sede</div>
 
-      <input type="file" id="qr-input-file"
-             accept="image/*" capture="environment"
-             style="display:none;"
-             onchange="onQrFileChange(event)">
-
       <!-- Idle -->
-      <div id="qr-idle">
-        <div class="qr-info" style="padding:16px 10px;">
-          <div class="qr-icon">📸</div>
-          <div class="qr-note" style="margin-bottom:14px;">
-            Premi il pulsante → scatta una foto al QR Code sulla parete della sede.<br><br>
-            <strong style="color:var(--gold)">📌 Come scattare bene:</strong><br>
-            Avvicinati al QR (30–50 cm), inquadra solo il QR e tieni fermo il telefono.
-          </div>
-          <button class="btn btn-gold" style="font-size:15px;padding:14px;" onclick="avviaScanner()">📸 Fotografa il QR</button>
-          <button class="btn btn-outline" style="margin-top:8px;font-size:13px;" onclick="simulaBadge()">🎯 Simula badge (senza QR)</button>
+      <div id="qr-idle" style="text-align:center;padding:10px 0;">
+        <div style="font-size:48px;margin-bottom:10px;">📷</div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;">
+          Premi il pulsante e punta la fotocamera<br>verso il QR Code della sede.
         </div>
+        <button class="btn btn-gold" style="font-size:15px;padding:14px;" onclick="avviaScanner()">
+          📷 Avvia fotocamera
+        </button>
+        <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="simulaBadge()">
+          🎯 Simula badge (senza QR)
+        </button>
       </div>
 
-      <!-- Elaborazione -->
-      <div id="qr-scanning" style="display:none;text-align:center;padding:24px;">
-        <div style="font-size:36px;margin-bottom:10px;">⏳</div>
-        <div style="font-size:14px;color:var(--text-muted);">Lettura QR in corso…</div>
+      <!-- Videocamera live -->
+      <div id="qr-scanning" style="display:none;">
+        <div style="position:relative;border-radius:10px;overflow:hidden;background:#000;margin-bottom:10px;">
+          <video id="qr-video-el" autoplay playsinline muted
+            style="width:100%;max-height:260px;object-fit:cover;display:block;"></video>
+          <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+            width:180px;height:180px;border:3px solid var(--gold);border-radius:10px;
+            box-shadow:0 0 0 9999px rgba(0,0,0,0.45);pointer-events:none;">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;
+              background:linear-gradient(90deg,transparent,var(--gold),transparent);
+              animation:scanline 2s linear infinite;"></div>
+          </div>
+        </div>
         <canvas id="qr-canvas-hidden" style="position:fixed;left:-9999px;top:-9999px;"></canvas>
+        <p style="text-align:center;font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+          Punta il QR al centro del mirino — lettura automatica
+        </p>
+        <button class="btn btn-outline" style="font-size:13px;" onclick="fermaScanner()">✕ Annulla</button>
       </div>
 
       <!-- Successo -->
@@ -1833,131 +1860,117 @@ function toast(msg) {
 
 
 // ═══════════════════════════════════════════════════════
-// QR SCANNER — input[capture] foto + jsQR
+// QR SCANNER — getUserMedia + BarcodeDetector (nativo iOS 17+) + jsQR fallback
 // ═══════════════════════════════════════════════════════
 
 const QR_SEDE_MAP = {
-  'OTT': ['ottaviano','ott','sede_ottaviano','badge_ottaviano','SEDE_OTTAVIANO'],
-  'SAN': ['santarpino','sant_arpino','san','sede_santarpino','badge_santarpino','SEDE_SANTARPINO'],
-  'VIL': ['villaricca','vil','sede_villaricca','badge_villaricca','SEDE_VILLARICCA'],
-  'GIU': ['giugliano','giu','sede_giugliano','badge_giugliano','SEDE_GIUGLIANO'],
+  'OTT': ['ottaviano','ott','sede_ottaviano','SEDE_OTTAVIANO'],
+  'SAN': ['santarpino','sant','san','sede_santarpino','SEDE_SANTARPINO'],
+  'VIL': ['villaricca','vil','sede_villaricca','SEDE_VILLARICCA'],
+  'GIU': ['giugliano','giu','sede_giugliano','SEDE_GIUGLIANO'],
 };
 
 function matchSedeDaQR(raw) {
   const t = (raw||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-  for (const [sede, keywords] of Object.entries(QR_SEDE_MAP)) {
-    if (keywords.some(k => t.includes(k.toLowerCase().replace(/[^a-z0-9]/g,'')))) return sede;
+  for (const [sede, kws] of Object.entries(QR_SEDE_MAP)) {
+    if (kws.some(k => t.includes(k.toLowerCase().replace(/[^a-z0-9]/g,'')))) return sede;
   }
   return null;
 }
 
+let _qrStream = null;
+let _qrRaf   = null;
+let _qrDetector = null;
+
 function avviaScanner() {
   const val = getData('dipendente_corrente');
   if (!val) { toast('⚠️ Seleziona prima il tuo nome'); return; }
-  const inp = document.getElementById('qr-input-file');
-  inp.value = '';
-  inp.click();
-}
 
-function _decodeAt(ctx, canvas, img, w, h) {
-  canvas.width = w; canvas.height = h;
-  ctx.drawImage(img, 0, 0, w, h);
-  try {
-    const d = ctx.getImageData(0, 0, w, h);
-    return jsQR(d.data, w, h, { inversionAttempts: 'attemptBoth' });
-  } catch(e) { return null; }
-}
+  // Inizializza BarcodeDetector se disponibile (iOS 17+, Chrome Android)
+  if (typeof BarcodeDetector !== 'undefined') {
+    BarcodeDetector.getSupportedFormats().then(fmts => {
+      _qrDetector = new BarcodeDetector({ formats: ['qr_code'] });
+    }).catch(() => { _qrDetector = null; });
+  }
 
-function _decodeCrop(ctx, canvas, img, cx, cy, size) {
-  const sw = Math.min(size, img.width);
-  const sh = Math.min(size, img.height);
-  const sx = Math.max(0, cx - sw/2);
-  const sy = Math.max(0, cy - sh/2);
-  const outSz = 600;
-  canvas.width = outSz; canvas.height = outSz;
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outSz, outSz);
-  try {
-    const d = ctx.getImageData(0, 0, outSz, outSz);
-    return jsQR(d.data, outSz, outSz, { inversionAttempts: 'attemptBoth' });
-  } catch(e) { return null; }
-}
-
-function onQrFileChange(event) {
-  const file = event.target.files && event.target.files[0];
-  if (!file) { _qrShow('idle'); return; }
   _qrShow('scanning');
 
-  const safetyTimer = setTimeout(function() {
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' } }
+  }).then(function(stream) {
+    _qrStream = stream;
+    const video = document.getElementById('qr-video-el');
+    video.srcObject = stream;
+    video.play().catch(()=>{});
+    // Aspetta che il video sia effettivamente in play
+    video.addEventListener('playing', _startScanLoop, { once: true });
+    // Fallback se 'playing' non scatta
+    setTimeout(function() { if (_qrRaf === null && _qrStream) _startScanLoop(); }, 1500);
+  }).catch(function(err) {
     _qrShow('error');
-    document.getElementById('qr-error-msg').textContent = '❌ Timeout. Riprova.';
-  }, 20000);
-
-  // createObjectURL è molto più veloce di readAsDataURL su iOS con foto ad alta risoluzione
-  const objectUrl = URL.createObjectURL(file);
-  const img = new Image();
-
-  img.onerror = function() {
-    clearTimeout(safetyTimer);
-    URL.revokeObjectURL(objectUrl);
-    _qrShow('error');
-    document.getElementById('qr-error-msg').textContent = '❌ Errore caricamento immagine. Riprova.';
-  };
-
-  img.onload = function() {
-    clearTimeout(safetyTimer);
-    URL.revokeObjectURL(objectUrl);
-
-    // Canvas dedicato nel DOM (non display:none) per compatibilità iOS Safari
-    const canvas = document.createElement('canvas');
-    canvas.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
-    document.body.appendChild(canvas);
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-    function tryDecode(w, h, sx, sy, sw, sh) {
-      canvas.width = w; canvas.height = h;
-      if (sw !== undefined) {
-        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
-      } else {
-        ctx.drawImage(img, 0, 0, w, h);
-      }
-      try {
-        const d = ctx.getImageData(0, 0, w, h);
-        return jsQR(d.data, w, h, { inversionAttempts: 'attemptBoth' });
-      } catch(e) { return null; }
-    }
-
-    let code = null;
-    const W = img.width, H = img.height, MIN = Math.min(W, H);
-    try {
-      // 1. Ridimensiona a 800px — ottimale per jsQR
-      if (!code) { const s=Math.min(1,800/Math.max(W,H)); code=tryDecode(Math.round(W*s),Math.round(H*s)); }
-      // 2. Crop centro 70%
-      if (!code) { const sz=MIN*0.7; code=tryDecode(600,600, W/2-sz/2,H/2-sz/2,sz,sz); }
-      // 3. Ridimensiona a 1200px
-      if (!code) { const s=Math.min(1,1200/Math.max(W,H)); code=tryDecode(Math.round(W*s),Math.round(H*s)); }
-      // 4. Crop centro 45%
-      if (!code) { const sz=MIN*0.45; code=tryDecode(600,600, W/2-sz/2,H/2-sz/2,sz,sz); }
-      // 5. Immagine intera
-      if (!code) { code=tryDecode(W,H); }
-      // 6. Crop terzo superiore
-      if (!code) { const sz=MIN*0.5; code=tryDecode(600,600, W/2-sz/2,H*0.35-sz/2,sz,sz); }
-      // 7. Ridimensiona a 400px
-      if (!code) { const s=Math.min(1,400/Math.max(W,H)); code=tryDecode(Math.round(W*s),Math.round(H*s)); }
-    } catch(ex) {}
-
-    document.body.removeChild(canvas);
-
-    if (code && code.data) {
-      _onQRFound(code.data);
-    } else {
-      _qrShow('error');
-      document.getElementById('qr-error-msg').textContent =
-        '❌ QR non rilevato.\n\n📌 Consigli:\n• Avvicinati (20–40 cm)\n• Inquadra SOLO il QR\n• Buona luce, niente riflessi\n• Tieni fermo il telefono\n\nRiprova!';
-    }
-  };
-
-  img.src = objectUrl;
+    document.getElementById('qr-error-msg').textContent =
+      '❌ Fotocamera non accessibile.\n\nSu iPhone: Impostazioni → Safari → Fotocamera → Consenti\n\nErrore: ' + err.message;
+  });
 }
+
+function _startScanLoop() {
+  if (_qrRaf !== null) return; // già avviato
+  _qrRaf = 0; // segna come avviato
+  _scanTick();
+}
+
+async function _scanTick() {
+  if (!_qrStream) return;
+  const video = document.getElementById('qr-video-el');
+  if (!video || !video.videoWidth) {
+    _qrRaf = requestAnimationFrame(_scanTick);
+    return;
+  }
+
+  let found = null;
+
+  // Metodo 1: BarcodeDetector nativo (iOS 17+)
+  if (_qrDetector) {
+    try {
+      const codes = await _qrDetector.detect(video);
+      if (codes && codes.length > 0) found = codes[0].rawValue;
+    } catch(e) { _qrDetector = null; }
+  }
+
+  // Metodo 2: jsQR via canvas (fallback)
+  if (!found && typeof jsQR !== 'undefined') {
+    const canvas = document.getElementById('qr-canvas-hidden');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const w = video.videoWidth, h = video.videoHeight;
+    canvas.width = w; canvas.height = h;
+    ctx.drawImage(video, 0, 0, w, h);
+    try {
+      const d = ctx.getImageData(0, 0, w, h);
+      const code = jsQR(d.data, w, h, { inversionAttempts: 'dontInvert' });
+      if (code) found = code.data;
+    } catch(e) {}
+  }
+
+  if (found) {
+    _stopCamera();
+    _onQRFound(found);
+    return;
+  }
+
+  _qrRaf = requestAnimationFrame(_scanTick);
+}
+
+function _stopCamera() {
+  if (_qrRaf) { cancelAnimationFrame(_qrRaf); }
+  _qrRaf = null;
+  if (_qrStream) { _qrStream.getTracks().forEach(t => t.stop()); }
+  _qrStream = null;
+  const v = document.getElementById('qr-video-el');
+  if (v) v.srcObject = null;
+}
+
+function fermaScanner() { _stopCamera(); _qrShow('idle'); }
+function resetScanner()  { _stopCamera(); _qrShow('idle'); }
 
 function _onQRFound(rawText) {
   const val = getData('dipendente_corrente');
@@ -1966,7 +1979,7 @@ function _onQRFound(rawText) {
   const sedeQR = matchSedeDaQR(rawText);
 
   if (!sedeQR) {
-    _eseguiBadge(dip, dip.sede, rawText, true);
+    _eseguiBadge(dip, dip.sede, true);
     return;
   }
   if (dip.sede !== 'MULTI' && dip.sede !== sedeQR) {
@@ -1977,31 +1990,22 @@ function _onQRFound(rawText) {
       '.\n\nContatta l\'admin se è un errore.';
     return;
   }
-  _eseguiBadge(dip, sedeQR, rawText, false);
+  _eseguiBadge(dip, sedeQR, false);
 }
 
-function _eseguiBadge(dip, sedeQR, rawText, generico) {
+function _eseguiBadge(dip, sedeId, generico) {
   const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
   const badges = getData(key, []);
   const lastBadge = badges[badges.length-1];
   const inSede = lastBadge && lastBadge.tipo === 'entrata';
-  const sedeLabel = SEDE_LABEL[sedeQR] || sedeQR;
-  const extra = generico ? ' (QR generico)' : '';
+  const sedeLabel = SEDE_LABEL[sedeId] || sedeId;
   if (!inSede) {
     badgeEntrata();
-    mostraQROk('Entrata registrata ✅', dip.nome + ' · ' + sedeLabel + extra);
+    mostraQROk('Entrata registrata ✅', dip.nome + ' · ' + sedeLabel);
   } else {
     badgeUscita();
-    mostraQROk('Uscita registrata ✅', dip.nome + ' · ' + sedeLabel + extra);
+    mostraQROk('Uscita registrata ✅', dip.nome + ' · ' + sedeLabel);
   }
-}
-
-function fermaScanner() { _qrShow('idle'); }
-
-function resetScanner() {
-  _qrShow('idle');
-  const inp = document.getElementById('qr-input-file');
-  if (inp) inp.value = '';
 }
 
 function _qrShow(stato) {
@@ -2009,6 +2013,7 @@ function _qrShow(stato) {
     const el = document.getElementById('qr-' + s);
     if (el) el.style.display = (s === stato) ? 'block' : 'none';
   });
+  if (stato !== 'scanning') _stopCamera();
 }
 
 function mostraQROk(titolo, sub) {
