@@ -964,8 +964,6 @@ input[type=password] { letter-spacing: 3px; }
       </div>
 
 
-      <div class="card">
-        <div class="card-title">🧪 Genera dati demo</div>
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Crea 30 giorni di badge fittizi per testare il report merito.</p>
         <button class="btn btn-blue" onclick="generaDemo()">Genera dati demo</button>
       </div>
@@ -1062,14 +1060,38 @@ async function apiCall(params={}, body=null) {
   if (!url) return null;
   try {
     if (body) {
-      const r = await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(body) });
-      return await r.json();
+      // POST: no-cors perché Google Apps Script non manda CORS headers al browser
+      await fetch(url, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(body) });
+      return { ok: true };
     } else {
-      const qs = new URLSearchParams(params).toString();
-      const r = await fetch(url + (qs ? '?'+qs : ''));
-      return await r.json();
+      // GET: JSONP per bypassare il blocco CORS
+      return await jsonpCall(url, params);
     }
   } catch(e) { return null; }
+}
+
+function jsonpCall(url, params={}) {
+  return new Promise((resolve) => {
+    const cbName = 'cb_' + Math.random().toString(36).slice(2);
+    const timeout = setTimeout(() => {
+      delete window[cbName];
+      if (sc && sc.parentNode) sc.parentNode.removeChild(sc);
+      resolve(null);
+    }, 8000);
+
+    window[cbName] = function(data) {
+      clearTimeout(timeout);
+      delete window[cbName];
+      if (sc && sc.parentNode) sc.parentNode.removeChild(sc);
+      resolve(data);
+    };
+
+    const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
+    const sc = document.createElement('script');
+    sc.src = url + '?' + qs;
+    sc.onerror = () => { clearTimeout(timeout); delete window[cbName]; resolve(null); };
+    document.head.appendChild(sc);
+  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2114,9 +2136,10 @@ const APPS_SCRIPT_CODE = `const SHEET_NAME = 'Badge';
 
 function doGet(e) {
   const a = (e.parameter.action||'');
-  if (a==='ping') return ok({sheet:SpreadsheetApp.getActiveSpreadsheet().getName()});
-  if (a==='presenze') return ok({data:getPresenze(e.parameter.data||today())});
-  return ok({msg:'Cinquegrana Badging API OK'});
+  const cb = e.parameter.callback||'';
+  if (a==='ping') return ok({sheet:SpreadsheetApp.getActiveSpreadsheet().getName()}, cb);
+  if (a==='presenze') return ok({data:getPresenze(e.parameter.data||today())}, cb);
+  return ok({msg:'Cinquegrana Badging API OK'}, cb);
 }
 
 function doPost(e) {
@@ -2154,8 +2177,16 @@ function getPresenze(data) {
 function today() {
   return Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyy-MM-dd');
 }
-function ok(d)   { return ContentService.createTextOutput(JSON.stringify({ok:true,...d})).setMimeType(ContentService.MimeType.JSON); }
-function err_(m) { return ContentService.createTextOutput(JSON.stringify({ok:false,error:m})).setMimeType(ContentService.MimeType.JSON); }`;
+function ok(d, cb) {
+  const json = JSON.stringify({ok:true,...d});
+  if (cb) return ContentService.createTextOutput(cb+'('+json+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+}
+function err_(m, cb) {
+  const json = JSON.stringify({ok:false,error:m});
+  if (cb) return ContentService.createTextOutput(cb+'('+json+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
+  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
+}`;
 
 function initSheetConfig() {
   const url = getData('sheet_url','');
