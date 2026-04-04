@@ -710,31 +710,34 @@ input[type=password] { letter-spacing: 3px; }
       </button>
     </div>
 
-    <!-- QR SCANNER — videocamera live getUserMedia -->
+    <!-- QR SCANNER — foto con input[capture] + jsQR -->
     <div class="card" id="qr-card">
       <div class="card-title">📷 Scansiona QR sede</div>
+
+      <input type="file" id="qr-input-file"
+             accept="image/*" capture="environment"
+             style="display:none;"
+             onchange="onQrFileChange(event)">
 
       <!-- Idle -->
       <div id="qr-idle">
         <div class="qr-info" style="padding:16px 10px;">
-          <div class="qr-icon">📷</div>
+          <div class="qr-icon">📸</div>
           <div class="qr-note" style="margin-bottom:14px;">
-            Premi il pulsante, punta la fotocamera verso il QR Code della sede e aspetta la lettura automatica.
+            Premi il pulsante → scatta una foto al QR Code sulla parete della sede.<br><br>
+            <strong style="color:var(--gold)">📌 Come scattare bene:</strong><br>
+            Avvicinati al QR (30–50 cm), inquadra solo il QR e tieni fermo il telefono.
           </div>
-          <button class="btn btn-gold" style="font-size:15px;padding:14px;" onclick="avviaScanner()">📷 Avvia fotocamera</button>
+          <button class="btn btn-gold" style="font-size:15px;padding:14px;" onclick="avviaScanner()">📸 Fotografa il QR</button>
           <button class="btn btn-outline" style="margin-top:8px;font-size:13px;" onclick="simulaBadge()">🎯 Simula badge (senza QR)</button>
         </div>
       </div>
 
-      <!-- Videocamera attiva -->
-      <div id="qr-scanning" style="display:none;">
-        <div class="qr-frame-wrap" style="margin-bottom:10px;">
-          <video id="qr-video-el" autoplay playsinline muted></video>
-          <div class="qr-aim"></div>
-        </div>
-        <p class="qr-cam-label">Punta il QR al centro del mirino</p>
+      <!-- Elaborazione -->
+      <div id="qr-scanning" style="display:none;text-align:center;padding:24px;">
+        <div style="font-size:36px;margin-bottom:10px;">⏳</div>
+        <div style="font-size:14px;color:var(--text-muted);">Lettura QR in corso…</div>
         <canvas id="qr-canvas-hidden" style="position:fixed;left:-9999px;top:-9999px;"></canvas>
-        <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="fermaScanner()">✕ Annulla</button>
       </div>
 
       <!-- Successo -->
@@ -1506,24 +1509,11 @@ async function refreshAdmin() {
   const sheetUrl = getData('sheet_url','');
   let badgeMap = {}; // nome_normalizzato -> [badge]
 
-  if (sheetUrl) {
-    document.getElementById('lista-dipendenti-oggi').innerHTML =
-      '<p style="color:var(--text-muted);font-size:13px;">⏳ Caricamento da Sheets…</p>';
-    const res = await apiCall({ action:'presenze', data: getTodayKey() });
-    if (res && res.ok && Array.isArray(res.data)) {
-      res.data.forEach(row => {
-        const k = row.nome.replace(/\s+/g,'_').toLowerCase();
-        if (!badgeMap[k]) badgeMap[k] = [];
-        badgeMap[k].push(row);
-      });
-    }
-  } else {
-    // fallback: localStorage
-    DIPENDENTI.forEach(dip => {
-      const k = dip.nome.replace(/\s+/g,'_').toLowerCase();
-      badgeMap[k] = getData(getBadgeKey(k), []);
-    });
-  }
+  // Carica SEMPRE da localStorage (fonte primaria e affidabile)
+  DIPENDENTI.forEach(dip => {
+    const k = dip.nome.replace(/\s+/g,'_').toLowerCase();
+    badgeMap[k] = getData(getBadgeKey(k), []);
+  });
 
   let presenti = 0, alerts = 0, totalBadge = 0;
   let rows = '';
@@ -1843,7 +1833,7 @@ function toast(msg) {
 
 
 // ═══════════════════════════════════════════════════════
-// QR SCANNER — getUserMedia live video + jsQR
+// QR SCANNER — input[capture] foto + jsQR
 // ═══════════════════════════════════════════════════════
 
 const QR_SEDE_MAP = {
@@ -1861,71 +1851,91 @@ function matchSedeDaQR(raw) {
   return null;
 }
 
-let _qrStream = null;
-let _qrInterval = null;
-
 function avviaScanner() {
   const val = getData('dipendente_corrente');
   if (!val) { toast('⚠️ Seleziona prima il tuo nome'); return; }
-
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    _qrShow('error');
-    document.getElementById('qr-error-msg').textContent =
-      '❌ Fotocamera non supportata su questo browser.\nUsa Safari su iOS o Chrome su Android.';
-    return;
-  }
-
-  _qrShow('scanning');
-
-  navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }
-  }).then(function(stream) {
-    _qrStream = stream;
-    const video = document.getElementById('qr-video-el');
-    video.srcObject = stream;
-    video.play();
-    video.addEventListener('playing', function startScan() {
-      video.removeEventListener('playing', startScan);
-      _qrInterval = setInterval(function() { _scanFrame(video); }, 250);
-    });
-  }).catch(function(err) {
-    _qrShow('error');
-    document.getElementById('qr-error-msg').textContent =
-      '❌ Accesso fotocamera negato.\n\nVai in Impostazioni → Safari → Fotocamera → Consenti.\n\nErrore: ' + err.message;
-  });
+  const inp = document.getElementById('qr-input-file');
+  inp.value = '';
+  inp.click();
 }
 
-function _scanFrame(video) {
-  if (!video.videoWidth) return;
-  const canvas = document.getElementById('qr-canvas-hidden');
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  const w = video.videoWidth;
-  const h = video.videoHeight;
-  canvas.width = w;
-  canvas.height = h;
-  ctx.drawImage(video, 0, 0, w, h);
-  let code = null;
+function _decodeAt(ctx, canvas, img, w, h) {
+  canvas.width = w; canvas.height = h;
+  ctx.drawImage(img, 0, 0, w, h);
   try {
     const d = ctx.getImageData(0, 0, w, h);
-    code = jsQR(d.data, w, h, { inversionAttempts: 'attemptBoth' });
-  } catch(e) {}
-
-  if (code && code.data) {
-    _stopCamera();
-    _onQRFound(code.data);
-  }
+    return jsQR(d.data, w, h, { inversionAttempts: 'attemptBoth' });
+  } catch(e) { return null; }
 }
 
-function _stopCamera() {
-  if (_qrInterval) { clearInterval(_qrInterval); _qrInterval = null; }
-  if (_qrStream) { _qrStream.getTracks().forEach(t => t.stop()); _qrStream = null; }
-  const video = document.getElementById('qr-video-el');
-  if (video) { video.srcObject = null; }
+function _decodeCrop(ctx, canvas, img, cx, cy, size) {
+  const sw = Math.min(size, img.width);
+  const sh = Math.min(size, img.height);
+  const sx = Math.max(0, cx - sw/2);
+  const sy = Math.max(0, cy - sh/2);
+  const outSz = 600;
+  canvas.width = outSz; canvas.height = outSz;
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outSz, outSz);
+  try {
+    const d = ctx.getImageData(0, 0, outSz, outSz);
+    return jsQR(d.data, outSz, outSz, { inversionAttempts: 'attemptBoth' });
+  } catch(e) { return null; }
 }
 
-function fermaScanner() { _stopCamera(); _qrShow('idle'); }
+function onQrFileChange(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) { _qrShow('idle'); return; }
+  _qrShow('scanning');
 
-function resetScanner() { _stopCamera(); _qrShow('idle'); }
+  const safetyTimer = setTimeout(function() {
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent = '❌ Timeout. Riprova con una foto più nitida e ravvicinata.';
+  }, 20000);
+
+  const reader = new FileReader();
+  reader.onerror = function() {
+    clearTimeout(safetyTimer);
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent = '❌ Errore lettura file. Riprova.';
+  };
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onerror = function() {
+      clearTimeout(safetyTimer);
+      _qrShow('error');
+      document.getElementById('qr-error-msg').textContent = '❌ Errore caricamento immagine. Riprova.';
+    };
+    img.onload = function() {
+      clearTimeout(safetyTimer);
+      // Canvas temporaneo appendito al body — iOS Safari non renderizza canvas fuori DOM
+      const canvas = document.createElement('canvas');
+      canvas.style.cssText = 'position:fixed;left:-9999px;top:-9999px;pointer-events:none;';
+      document.body.appendChild(canvas);
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      let code = null;
+      try {
+        if (!code) { const s=Math.min(1,800/Math.max(img.width,img.height)); code=_decodeAt(ctx,canvas,img,Math.round(img.width*s),Math.round(img.height*s)); }
+        if (!code) { code=_decodeCrop(ctx,canvas,img,img.width/2,img.height/2,Math.min(img.width,img.height)*0.7); }
+        if (!code) { const s=Math.min(1,1200/Math.max(img.width,img.height)); code=_decodeAt(ctx,canvas,img,Math.round(img.width*s),Math.round(img.height*s)); }
+        if (!code) { code=_decodeCrop(ctx,canvas,img,img.width/2,img.height/2,Math.min(img.width,img.height)*0.45); }
+        if (!code) { code=_decodeAt(ctx,canvas,img,img.width,img.height); }
+        if (!code) { code=_decodeCrop(ctx,canvas,img,img.width/2,img.height*0.35,Math.min(img.width,img.height)*0.5); }
+        if (!code) { const s=Math.min(1,400/Math.max(img.width,img.height)); code=_decodeAt(ctx,canvas,img,Math.round(img.width*s),Math.round(img.height*s)); }
+      } catch(ex) {}
+      document.body.removeChild(canvas);
+
+      if (code && code.data) {
+        _onQRFound(code.data);
+      } else {
+        _qrShow('error');
+        document.getElementById('qr-error-msg').textContent =
+          '❌ QR non rilevato.\n\n📌 Consigli:\n• Avvicinati (30–50 cm)\n• Inquadra solo il QR\n• Buona luce, niente riflessi\n• Tieni fermo il telefono\n\nRiprova!';
+      }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 
 function _onQRFound(rawText) {
   const val = getData('dipendente_corrente');
@@ -1937,7 +1947,6 @@ function _onQRFound(rawText) {
     _eseguiBadge(dip, dip.sede, rawText, true);
     return;
   }
-
   if (dip.sede !== 'MULTI' && dip.sede !== sedeQR) {
     _qrShow('error');
     document.getElementById('qr-error-msg').textContent =
@@ -1946,7 +1955,6 @@ function _onQRFound(rawText) {
       '.\n\nContatta l\'admin se è un errore.';
     return;
   }
-
   _eseguiBadge(dip, sedeQR, rawText, false);
 }
 
@@ -1957,7 +1965,6 @@ function _eseguiBadge(dip, sedeQR, rawText, generico) {
   const inSede = lastBadge && lastBadge.tipo === 'entrata';
   const sedeLabel = SEDE_LABEL[sedeQR] || sedeQR;
   const extra = generico ? ' (QR generico)' : '';
-
   if (!inSede) {
     badgeEntrata();
     mostraQROk('Entrata registrata ✅', dip.nome + ' · ' + sedeLabel + extra);
@@ -1967,12 +1974,19 @@ function _eseguiBadge(dip, sedeQR, rawText, generico) {
   }
 }
 
+function fermaScanner() { _qrShow('idle'); }
+
+function resetScanner() {
+  _qrShow('idle');
+  const inp = document.getElementById('qr-input-file');
+  if (inp) inp.value = '';
+}
+
 function _qrShow(stato) {
   ['idle','scanning','success','error'].forEach(s => {
     const el = document.getElementById('qr-' + s);
     if (el) el.style.display = (s === stato) ? 'block' : 'none';
   });
-  if (stato !== 'scanning') _stopCamera();
 }
 
 function mostraQROk(titolo, sub) {
