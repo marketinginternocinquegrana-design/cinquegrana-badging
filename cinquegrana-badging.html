@@ -1889,52 +1889,74 @@ function onQrFileChange(event) {
 
   const safetyTimer = setTimeout(function() {
     _qrShow('error');
-    document.getElementById('qr-error-msg').textContent = '❌ Timeout. Riprova con una foto più nitida e ravvicinata.';
+    document.getElementById('qr-error-msg').textContent = '❌ Timeout. Riprova.';
   }, 20000);
 
-  const reader = new FileReader();
-  reader.onerror = function() {
-    clearTimeout(safetyTimer);
-    _qrShow('error');
-    document.getElementById('qr-error-msg').textContent = '❌ Errore lettura file. Riprova.';
-  };
-  reader.onload = function(e) {
-    const img = new Image();
-    img.onerror = function() {
-      clearTimeout(safetyTimer);
-      _qrShow('error');
-      document.getElementById('qr-error-msg').textContent = '❌ Errore caricamento immagine. Riprova.';
-    };
-    img.onload = function() {
-      clearTimeout(safetyTimer);
-      // Canvas temporaneo appendito al body — iOS Safari non renderizza canvas fuori DOM
-      const canvas = document.createElement('canvas');
-      canvas.style.cssText = 'position:fixed;left:-9999px;top:-9999px;pointer-events:none;';
-      document.body.appendChild(canvas);
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      let code = null;
-      try {
-        if (!code) { const s=Math.min(1,800/Math.max(img.width,img.height)); code=_decodeAt(ctx,canvas,img,Math.round(img.width*s),Math.round(img.height*s)); }
-        if (!code) { code=_decodeCrop(ctx,canvas,img,img.width/2,img.height/2,Math.min(img.width,img.height)*0.7); }
-        if (!code) { const s=Math.min(1,1200/Math.max(img.width,img.height)); code=_decodeAt(ctx,canvas,img,Math.round(img.width*s),Math.round(img.height*s)); }
-        if (!code) { code=_decodeCrop(ctx,canvas,img,img.width/2,img.height/2,Math.min(img.width,img.height)*0.45); }
-        if (!code) { code=_decodeAt(ctx,canvas,img,img.width,img.height); }
-        if (!code) { code=_decodeCrop(ctx,canvas,img,img.width/2,img.height*0.35,Math.min(img.width,img.height)*0.5); }
-        if (!code) { const s=Math.min(1,400/Math.max(img.width,img.height)); code=_decodeAt(ctx,canvas,img,Math.round(img.width*s),Math.round(img.height*s)); }
-      } catch(ex) {}
-      document.body.removeChild(canvas);
+  // createObjectURL è molto più veloce di readAsDataURL su iOS con foto ad alta risoluzione
+  const objectUrl = URL.createObjectURL(file);
+  const img = new Image();
 
-      if (code && code.data) {
-        _onQRFound(code.data);
-      } else {
-        _qrShow('error');
-        document.getElementById('qr-error-msg').textContent =
-          '❌ QR non rilevato.\n\n📌 Consigli:\n• Avvicinati (30–50 cm)\n• Inquadra solo il QR\n• Buona luce, niente riflessi\n• Tieni fermo il telefono\n\nRiprova!';
-      }
-    };
-    img.src = e.target.result;
+  img.onerror = function() {
+    clearTimeout(safetyTimer);
+    URL.revokeObjectURL(objectUrl);
+    _qrShow('error');
+    document.getElementById('qr-error-msg').textContent = '❌ Errore caricamento immagine. Riprova.';
   };
-  reader.readAsDataURL(file);
+
+  img.onload = function() {
+    clearTimeout(safetyTimer);
+    URL.revokeObjectURL(objectUrl);
+
+    // Canvas dedicato nel DOM (non display:none) per compatibilità iOS Safari
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = 'position:fixed;left:-9999px;top:-9999px;';
+    document.body.appendChild(canvas);
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+    function tryDecode(w, h, sx, sy, sw, sh) {
+      canvas.width = w; canvas.height = h;
+      if (sw !== undefined) {
+        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+      } else {
+        ctx.drawImage(img, 0, 0, w, h);
+      }
+      try {
+        const d = ctx.getImageData(0, 0, w, h);
+        return jsQR(d.data, w, h, { inversionAttempts: 'attemptBoth' });
+      } catch(e) { return null; }
+    }
+
+    let code = null;
+    const W = img.width, H = img.height, MIN = Math.min(W, H);
+    try {
+      // 1. Ridimensiona a 800px — ottimale per jsQR
+      if (!code) { const s=Math.min(1,800/Math.max(W,H)); code=tryDecode(Math.round(W*s),Math.round(H*s)); }
+      // 2. Crop centro 70%
+      if (!code) { const sz=MIN*0.7; code=tryDecode(600,600, W/2-sz/2,H/2-sz/2,sz,sz); }
+      // 3. Ridimensiona a 1200px
+      if (!code) { const s=Math.min(1,1200/Math.max(W,H)); code=tryDecode(Math.round(W*s),Math.round(H*s)); }
+      // 4. Crop centro 45%
+      if (!code) { const sz=MIN*0.45; code=tryDecode(600,600, W/2-sz/2,H/2-sz/2,sz,sz); }
+      // 5. Immagine intera
+      if (!code) { code=tryDecode(W,H); }
+      // 6. Crop terzo superiore
+      if (!code) { const sz=MIN*0.5; code=tryDecode(600,600, W/2-sz/2,H*0.35-sz/2,sz,sz); }
+      // 7. Ridimensiona a 400px
+      if (!code) { const s=Math.min(1,400/Math.max(W,H)); code=tryDecode(Math.round(W*s),Math.round(H*s)); }
+    } catch(ex) {}
+
+    document.body.removeChild(canvas);
+
+    if (code && code.data) {
+      _onQRFound(code.data);
+    } else {
+      _qrShow('error');
+      document.getElementById('qr-error-msg').textContent =
+        '❌ QR non rilevato.\n\n📌 Consigli:\n• Avvicinati (20–40 cm)\n• Inquadra SOLO il QR\n• Buona luce, niente riflessi\n• Tieni fermo il telefono\n\nRiprova!';
+    }
+  };
+
+  img.src = objectUrl;
 }
 
 function _onQRFound(rawText) {
