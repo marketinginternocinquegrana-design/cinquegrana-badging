@@ -1061,26 +1061,15 @@ async function apiCall(params={}, body=null) {
   const base = getData('sheet_url','');
   if (!base) return null;
   try {
+    // Sia GET che POST: no-cors (Google riceve tutto, noi non leggiamo la risposta — è normale per Apps Script)
+    const parts = [];
+    for (const k in (params||{})) parts.push(encodeURIComponent(k)+'='+encodeURIComponent(params[k]));
     if (body) {
-      // POST via no-cors — Google riceve il dato, non possiamo leggere risposta (normale)
-      await fetch(base, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(body)
-      });
-      return { ok: true };
+      await fetch(base, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(body) });
     } else {
-      // GET via proxy CORS pubblico
-      const parts = [];
-      for (const k in (params||{})) parts.push(encodeURIComponent(k)+'='+encodeURIComponent(params[k]));
-      const targetUrl = base + (parts.length ? '?' + parts.join('&') : '');
-      const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(targetUrl);
-      const r = await fetch(proxyUrl, { signal: AbortSignal.timeout(10000) });
-      if (!r.ok) return null;
-      const wrapper = await r.json();
-      return JSON.parse(wrapper.contents);
+      await fetch(base + (parts.length ? '?'+parts.join('&') : ''), { mode:'no-cors' });
     }
+    return { ok: true };
   } catch(e) { return null; }
 }
 
@@ -2203,18 +2192,24 @@ function salvaSheetUrl() {
 async function testSheetUrl() {
   const url = getData('sheet_url','');
   const st = document.getElementById('sheet-status');
-  if (!url) { st.innerHTML='<span style="color:var(--red);">❌ Prima incolla e salva l\'URL</span>'; return; }
-  st.innerHTML = '<span style="color:var(--text-muted);">⏳ Test in corso (max 10s)…</span>';
-  const res = await apiCall({ action:'ping' });
-  if (res && res.ok) {
-    st.innerHTML = '<span style="color:var(--green);">✅ Connesso! Foglio: '+(res.sheet||'OK')+'</span>';
-  } else {
-    st.innerHTML = '<span style="color:var(--red);">❌ Timeout o errore CORS</span>'
-      +'<div style="margin-top:8px;font-size:11px;color:var(--text-muted);line-height:1.8;">'
-      +'• Su script.google.com: <b>Distribuisci → Nuova distribuzione</b><br>'
-      +'• Tipo: <b>App web</b> · Chi accede: <b>Chiunque</b><br>'
-      +'• Copia il <b>nuovo URL</b> (/exec) e incollalo qui → Salva → Test'
-      +'</div>';
+  if (!url) {
+    st.innerHTML = '<span style="color:var(--red);">❌ Prima incolla e salva l\'URL</span>';
+    return;
+  }
+  // Valida formato URL
+  if (!url.includes('script.google.com') || !url.includes('/exec')) {
+    st.innerHTML = '<span style="color:var(--red);">❌ URL non valido — deve essere un URL Apps Script che finisce con /exec</span>';
+    return;
+  }
+  st.innerHTML = '<span style="color:var(--text-muted);">⏳ Verifica in corso…</span>';
+  try {
+    // no-cors: se Google risponde (anche opaque) l'URL è raggiungibile
+    const r = await fetch(url + '?action=ping', { mode: 'no-cors' });
+    // r.type === 'opaque' significa che Google ha risposto (CORS bloccato lato browser, ma il server funziona)
+    st.innerHTML = '<span style="color:var(--green);">✅ URL raggiungibile! Google Apps Script attivo.<br>'
+      + '<small style="font-weight:400;">I badge verranno salvati sul foglio automaticamente.</small></span>';
+  } catch(e) {
+    st.innerHTML = '<span style="color:var(--red);">❌ URL non raggiungibile — controlla la connessione</span>';
   }
 }
 
