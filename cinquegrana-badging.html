@@ -1523,11 +1523,35 @@ async function refreshAdmin() {
   const sheetUrl = getData('sheet_url','');
   let badgeMap = {}; // nome_normalizzato -> [badge]
 
-  // Carica SEMPRE da localStorage (fonte primaria e affidabile)
+  // Carica prima da localStorage (badge di questo dispositivo)
   DIPENDENTI.forEach(dip => {
     const k = dip.nome.replace(/\s+/g,'_').toLowerCase();
     badgeMap[k] = getData(getBadgeKey(k), []);
   });
+
+  // Se Google Sheets configurato, sovrascrive/integra con dati di tutti i dispositivi
+  if (sheetUrl) {
+    const el = document.getElementById('lista-dipendenti-oggi');
+    if (el) el.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">⏳ Caricamento da Sheets…</p>';
+    try {
+      const res = await apiCall({ action:'presenze', data: getTodayKey() });
+      if (res && res.ok && Array.isArray(res.data) && res.data.length > 0) {
+        // Svuota e ricostruisci da Sheets (dati di tutti i dispositivi)
+        badgeMap = {};
+        res.data.forEach(row => {
+          const k = (row.nome||'').replace(/\s+/g,'_').toLowerCase();
+          if (!badgeMap[k]) badgeMap[k] = [];
+          badgeMap[k].push({
+            tipo: row.tipo,
+            ore: row.ore,
+            ts: row.ts || 0,
+            ritardo: row.ritardo || 0,
+            anticipo: row.anticipo || 0
+          });
+        });
+      }
+    } catch(e) {}
+  }
 
   let presenti = 0, alerts = 0, totalBadge = 0;
   let rows = '';
