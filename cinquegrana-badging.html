@@ -508,7 +508,58 @@ table.rep tr:hover td { background: rgba(200,169,110,0.04); }
 
 .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 14px 0; }
 
-/* QR rimosso */
+/* ═══ QR AREA ═══ */
+.qr-info {
+  text-align: center;
+  padding: 20px;
+  border: 2px dashed rgba(200,169,110,0.2);
+  border-radius: 10px;
+}
+.qr-icon { font-size: 48px; margin-bottom: 8px; }
+.qr-note { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+/* ═══ QR VIDEO ═══ */
+#qr-video-el {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  background: #000;
+}
+.qr-frame-wrap {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+.qr-aim {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  width: 180px; height: 180px;
+  border: 3px solid var(--gold);
+  border-radius: 10px;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
+  pointer-events: none;
+}
+.qr-aim::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  animation: scanline 2s linear infinite;
+}
+@keyframes scanline {
+  0%   { top: 0;    opacity:1; }
+  50%  { top: 100%; opacity:0.4; }
+  100% { top: 0;    opacity:1; }
+}
+.qr-cam-label {
+  text-align:center; font-size:12px; color:var(--text-muted); margin-top:8px;
+}
+#qr-canvas-hidden { display: none; }
 
 /* ═══ SCROLL AREA ═══ */
 .scroll-area { max-height: 320px; overflow-y: auto; }
@@ -522,27 +573,11 @@ input[type=password] { letter-spacing: 3px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .badge-btn { padding: 16px 6px; font-size: 12px; }
 }
-
-/* ═══ PIN KEYPAD ═══ */
-.pin-key {
-  background: var(--dark3);
-  border: 1px solid rgba(200,169,110,0.2);
-  border-radius: 10px;
-  color: var(--text);
-  font-family: 'Playfair Display', serif;
-  font-size: 22px;
-  font-weight: 700;
-  padding: 18px 10px;
-  cursor: pointer;
-  transition: all .15s;
-  -webkit-tap-highlight-color: transparent;
-}
-.pin-key:active { background: var(--mid); transform: scale(0.94); }
-.pin-clear { background: rgba(224,82,82,0.12); border-color: rgba(224,82,82,0.3); color: var(--red); }
-.pin-ok    { background: rgba(82,183,136,0.12); border-color: rgba(82,183,136,0.3); color: var(--green); font-size:26px; }
-
 </style>
-
+<!-- jsQR: decodifica QR da immagine/canvas — funziona su tutti i browser incluso iOS Chrome -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<!-- QRCode.js per generare QR in admin -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -675,29 +710,35 @@ input[type=password] { letter-spacing: 3px; }
       </button>
     </div>
 
-    <!-- BADGE PIN SEDE -->
+    <!-- QR SCANNER — input capture (funziona su iOS Chrome/Safari/Android) -->
     <div class="card" id="qr-card">
-      <div class="card-title">📍 Timbra presenza</div>
+      <div class="card-title">📷 Scansiona QR sede</div>
 
-      <!-- Idle: istruzioni + bottone -->
-      <div id="qr-idle" style="text-align:center;padding:6px 0 10px;">
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.7;">
-          Premi il pulsante quando sei in sede.<br>
-          Il GPS verificherà che sei sul posto di lavoro.
+      <!-- Input nascosto — apre fotocamera nativa iOS/Android -->
+      <input type="file" id="qr-input-file"
+             accept="image/*" capture="environment"
+             style="display:none;"
+             onchange="onQrFileChange(event)">
+
+      <!-- Idle -->
+      <div id="qr-idle">
+        <div class="qr-info" style="padding:16px 10px;">
+          <div class="qr-icon">📸</div>
+          <div class="qr-note" style="margin-bottom:14px;">
+            Premi il pulsante → scatta una foto al QR Code sulla parete della sede.<br><br>
+            <strong style="color:var(--gold)">📌 Come scattare bene:</strong><br>
+            Avvicinati al QR (30–50 cm), inquadra solo il QR e tieni fermo il telefono.
+          </div>
+          <button class="btn btn-gold" style="font-size:15px;padding:14px;" onclick="avviaScanner()">📸 Fotografa il QR</button>
+          <button class="btn btn-outline" style="margin-top:8px;font-size:13px;" onclick="simulaBadge()">🎯 Simula badge (senza QR)</button>
         </div>
-        <button class="btn btn-gold" style="font-size:15px;padding:16px;" onclick="avviaGPS()">
-          📍 Timbra con GPS
-        </button>
-        <button class="btn btn-outline" style="margin-top:10px;font-size:13px;" onclick="simulaBadge()">
-          🎯 Simula badge (admin test)
-        </button>
       </div>
 
-      <!-- In attesa GPS -->
+      <!-- Elaborazione -->
       <div id="qr-scanning" style="display:none;text-align:center;padding:24px;">
-        <div style="font-size:40px;margin-bottom:12px;">📡</div>
-        <div style="font-size:14px;font-weight:600;margin-bottom:6px;">Rilevamento posizione…</div>
-        <div style="font-size:12px;color:var(--text-muted);">Tieni il telefono all'aperto per un segnale migliore</div>
+        <div style="font-size:36px;margin-bottom:10px;">⏳</div>
+        <div style="font-size:14px;color:var(--text-muted);">Lettura QR in corso…</div>
+        <canvas id="qr-canvas-hidden" style="display:none;"></canvas>
       </div>
 
       <!-- Successo -->
@@ -705,7 +746,7 @@ input[type=password] { letter-spacing: 3px; }
         <div style="font-size:40px;margin-bottom:8px;">✅</div>
         <div id="qr-success-msg" style="font-size:15px;font-weight:600;color:var(--green);"></div>
         <div id="qr-success-sub" style="font-size:12px;color:var(--text-muted);margin-top:4px;"></div>
-        <button class="btn btn-outline" style="margin-top:14px;font-size:13px;" onclick="resetScanner()">Timbra di nuovo</button>
+        <button class="btn btn-outline" style="margin-top:14px;font-size:13px;" onclick="resetScanner()">Scansiona di nuovo</button>
       </div>
 
       <!-- Errore -->
@@ -873,106 +914,6 @@ input[type=password] { letter-spacing: 3px; }
 
     <!-- TOOLS -->
     <div id="at-tools" class="admin-tab-content" style="display:none;">
-
-      <!-- GOOGLE SHEETS CONFIG -->
-      <div class="card">
-        <div class="card-title">🔗 Google Sheets — presenze condivise</div>
-        <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:12px;">
-          Collega un Google Sheet per vedere i badge di <strong>tutti i dispositivi</strong> in tempo reale.<br>
-          Senza collegamento, ogni telefono salva solo i propri badge.<br>
-          <small style="color:var(--gold);">⚠️ Il tuo Apps Script deve restituire JSONP (vedi codice aggiornato sotto).</small>
-        </p>
-        <input type="text" id="sheet-url-input" placeholder="Incolla qui l'URL del tuo Apps Script…" style="margin-bottom:8px;font-size:12px;">
-        <div style="display:flex;gap:8px;margin-bottom:10px;">
-          <button class="btn btn-gold" style="flex:1;font-size:13px;" onclick="salvaSheetUrl()">💾 Salva</button>
-          <button class="btn btn-outline" style="flex:1;font-size:13px;" onclick="testSheetUrl()">🔌 Test</button>
-        </div>
-        <div id="sheet-status" style="font-size:12px;min-height:18px;"></div>
-
-        <hr class="divider">
-        <div style="font-size:12px;color:var(--gold);font-weight:600;margin-bottom:8px;">📋 Codice Apps Script da copiare</div>
-        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;line-height:1.6;">
-          1. Vai su <strong>script.google.com</strong> → Nuovo progetto<br>
-          2. Cancella tutto e incolla il codice qui sotto<br>
-          3. <em>Distribuisci → Nuova distribuzione → App web</em><br>
-          4. Accesso: <strong>Chiunque</strong> → Distribuisci → copia l'URL<br>
-          5. Incolla l'URL qui sopra e premi Salva
-        </div>
-        <textarea id="apps-script-code" readonly
-          style="width:100%;height:140px;background:var(--dark3);border:1px solid rgba(200,169,110,0.2);border-radius:8px;color:var(--text-muted);font-size:10px;font-family:monospace;padding:8px;resize:none;line-height:1.4;"
-        >// ══════════════════════════════════════════
-// INCOLLA QUESTO CODICE IN GOOGLE APPS SCRIPT
-// File > Nuovo progetto > incolla > Distribuisci > App web
-// Esegui come: Me | Accesso: Chiunque
-// ══════════════════════════════════════════
-const SHEET_NAME = 'Badge';
-
-function doGet(e) {
-  const a = (e.parameter.action || '');
-  const cb = e.parameter.callback || ''; // JSONP callback
-
-  let result;
-  if (a === 'ping') {
-    result = { sheet: SpreadsheetApp.getActiveSpreadsheet().getName() };
-  } else if (a === 'presenze') {
-    result = { data: getPresenze(e.parameter.data || today()) };
-  } else {
-    result = { msg: 'Cinquegrana Badging API OK' };
-  }
-
-  // JSONP: necessario per leggere i dati dal browser senza CORS
-  const output = cb
-    ? cb + '(' + JSON.stringify(result) + ')'
-    : JSON.stringify(result);
-
-  return ContentService
-    .createTextOutput(output)
-    .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  try {
-    const p = JSON.parse(e.postData.contents);
-    if (p.action === 'badge') { salvaBadge(p); return jsonResp({ saved: true }); }
-    return jsonResp({ msg: 'unknown' });
-  } catch(err) { return jsonResp({ error: err.message }); }
-}
-
-function jsonResp(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
-}
-
-function salvaBadge(p) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sh = ss.getSheetByName(SHEET_NAME);
-  if (!sh) {
-    sh = ss.insertSheet(SHEET_NAME);
-    sh.appendRow(['Data','Nome','Sede','Tipo','Ore','Ritardo','Anticipo','Timestamp']);
-    sh.setFrozenRows(1);
-  }
-  sh.appendRow([p.data||today(), p.nome, p.sede, p.tipo, p.ore, p.ritardo||0, p.anticipo||0, p.ts||Date.now()]);
-}
-
-function getPresenze(data) {
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  if (!sh) return [];
-  const rows = sh.getDataRange().getValues();
-  const out = [];
-  for (let i = 1; i < rows.length; i++) {
-    const [d, nome, sede, tipo, ore, ritardo, anticipo, ts] = rows[i];
-    if (String(d).trim() === String(data).trim())
-      out.push({ nome, sede, tipo, ore, ritardo, anticipo, ts });
-  }
-  return out;
-}
-
-function today() {
-  const d = new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}</textarea>
-        <button class="btn btn-outline" style="margin-top:8px;font-size:12px;" onclick="copiaAppsScript()">📋 Copia codice</button>
-      </div>
-
       <div class="card">
         <div class="card-title">🗑 Reset presenze</div>
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Cancella tutti i badge della giornata. Usare a inizio giornata.</p>
@@ -984,6 +925,19 @@ function today() {
         <input type="text" id="sblocca-nome" placeholder="Nome dipendente" style="margin-bottom:8px;">
         <button class="btn btn-outline" onclick="sbloccaDispositivo()">Sblocca</button>
       </div>
+
+      <div class="card">
+        <div class="card-title">📱 Genera QR Code sedi</div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Genera e stampa i QR da affiggere in ogni sede. I dipendenti li scansionano per timbrare.</p>
+        <div id="qr-gen-area"></div>
+        <button class="btn btn-gold" style="margin-top:10px;" onclick="generaQRSedi()">🖨 Genera QR da stampare</button>
+      </div>
+
+
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Crea 30 giorni di badge fittizi per testare il report merito.</p>
+        <button class="btn btn-blue" onclick="generaDemo()">Genera dati demo</button>
+      </div>
+    </div>
 
   </div>
 </div>
@@ -1067,58 +1021,6 @@ function getAllKeys() {
   }
   return keys;
 }
-
-// ═══════════════════════════════════════════════════════
-// GOOGLE SHEETS API
-// ═══════════════════════════════════════════════════════
-// apiCall: POST usa no-cors (solo scrittura), GET usa JSONP per leggere i dati
-async function apiCall(params={}, body=null) {
-  const base = getData('sheet_url','');
-  if (!base) return null;
-
-  if (body) {
-    // POST: salva badge — no-cors, non serve risposta
-    try {
-      await fetch(base, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(body)
-      });
-      return { ok: true };
-    } catch(e) { return null; }
-  } else {
-    // GET: legge presenze — usa JSONP (unico modo con Apps Script + no autenticazione)
-    return new Promise((resolve) => {
-      const cb = 'cb_' + Date.now();
-      const parts = [];
-      for (const k in (params||{})) parts.push(encodeURIComponent(k)+'='+encodeURIComponent(params[k]));
-      parts.push('callback=' + cb);
-
-      const timeout = setTimeout(() => {
-        delete window[cb];
-        if (script.parentNode) script.parentNode.removeChild(script);
-        resolve(null);
-      }, 8000);
-
-      window[cb] = function(data) {
-        clearTimeout(timeout);
-        delete window[cb];
-        if (script.parentNode) script.parentNode.removeChild(script);
-        resolve(data);
-      };
-
-      const script = document.createElement('script');
-      script.src = base + '?' + parts.join('&');
-      script.onerror = () => { clearTimeout(timeout); delete window[cb]; resolve(null); };
-      document.head.appendChild(script);
-    });
-  }
-}
-
-// Aggiorna refreshAdmin per usare correttamente JSONP
-// NB: Apps Script doGet deve supportare callback JSONP:
-// return ContentService.createTextOutput(e.parameter.callback + '(' + JSON.stringify(output) + ')').setMimeType(ContentService.MimeType.JAVASCRIPT);
 
 // ═══════════════════════════════════════════════════════
 // OROLOGIO
@@ -1289,17 +1191,6 @@ function badgeEntrata() {
 
   badges.push(record);
   setData(key, badges);
-
-  // Invia a Google Sheets se configurato
-  const sheetUrl = getData('sheet_url','');
-  if (sheetUrl) {
-    apiCall({}, {
-      action:'badge', nome:dip.nome, sede:dip.sede, tipo:'entrata',
-      ore:record.ore, data:getTodayKey(),
-      ritardo: record.ritardo||0, ts: record.ts
-    });
-  }
-
   aggiornaStatusDip(dip);
   mostraStorico(dip);
 }
@@ -1344,17 +1235,6 @@ function badgeUscita() {
 
   badges.push(record);
   setData(key, badges);
-
-  // Invia a Google Sheets se configurato
-  const sheetUrl = getData('sheet_url','');
-  if (sheetUrl) {
-    apiCall({}, {
-      action:'badge', nome:dip.nome, sede:dip.sede, tipo:'uscita',
-      ore:record.ore, data:getTodayKey(),
-      anticipo: record.anticipo||0, ts: record.ts
-    });
-  }
-
   aggiornaStatusDip(dip);
   mostraStorico(dip);
 }
@@ -1551,73 +1431,36 @@ function adminTab(t) {
 // ═══════════════════════════════════════════════════════
 // ADMIN PRESENZE
 // ═══════════════════════════════════════════════════════
-async function refreshAdmin() {
+function refreshAdmin() {
   const now = new Date();
   const today = now.getDay();
-  const sheetUrl = getData('sheet_url','');
-  let badgeMap = {}; // nome_normalizzato -> [badge]
-
-  // Carica prima da localStorage (badge di questo dispositivo)
-  DIPENDENTI.forEach(dip => {
-    const k = dip.nome.replace(/\s+/g,'_').toLowerCase();
-    badgeMap[k] = getData(getBadgeKey(k), []);
-  });
-
-  // Se Google Sheets configurato, sovrascrive/integra con dati di tutti i dispositivi
-  if (sheetUrl) {
-    const el = document.getElementById('lista-dipendenti-oggi');
-    if (el) el.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">⏳ Caricamento da Sheets…</p>';
-    try {
-      const res = await apiCall({ action:'presenze', data: getTodayKey() });
-      if (res && Array.isArray(res.data) && res.data.length > 0) {
-        // Svuota e ricostruisci da Sheets (dati di tutti i dispositivi)
-        badgeMap = {};
-        res.data.forEach(row => {
-          const k = (row.nome||'').replace(/\s+/g,'_').toLowerCase();
-          if (!badgeMap[k]) badgeMap[k] = [];
-          badgeMap[k].push({
-            tipo: row.tipo,
-            ore: row.ore,
-            ts: row.ts || 0,
-            ritardo: row.ritardo || 0,
-            anticipo: row.anticipo || 0
-          });
-        });
-      }
-    } catch(e) {}
-  }
-
   let presenti = 0, alerts = 0, totalBadge = 0;
-  let rows = '';
+  let html = '';
 
   DIPENDENTI.forEach(dip => {
     const riposo = (dip.riposo||[]).includes(today);
-    const k = dip.nome.replace(/\s+/g,'_').toLowerCase();
-    const badges = badgeMap[k] || [];
+    const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
+    const badges = getData(key, []);
     totalBadge += badges.length;
 
-    const sorted = [...badges].sort((a,b)=>(a.ts||0)-(b.ts||0));
-    const last = sorted[sorted.length-1];
-    const inSede = last && last.tipo === 'entrata';
+    const lastBadge = badges[badges.length-1];
+    const inSede = lastBadge && lastBadge.tipo === 'entrata';
     if (inSede) presenti++;
 
-    const hasAlert = badges.some(b => (b.ritardo||0)>0 || (b.anticipo||0)>0);
+    const hasAlert = badges.some(b => b.ritardo || b.anticipo);
     if (hasAlert) alerts++;
 
     const initials = dip.nome.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
     const statusEmoji = riposo ? '😴' : inSede ? '🟢' : badges.length ? '🔴' : '⚪';
-    const orari = sorted.map(b =>
-      `<span style="font-size:10px;color:${b.tipo==='entrata'?'var(--green)':'var(--red)'};">${b.tipo==='entrata'?'▲':'▼'}${b.ore||''}</span>`
-    ).join(' ');
 
-    rows += `<div class="emp-row">
+    html += `<div class="emp-row">
       <div class="emp-avatar">${initials}</div>
       <div style="flex:1">
         <div class="emp-name">${dip.nome}</div>
         <div class="emp-sede">
           <span class="sede-tag ${SEDE_CLASS[dip.sede]||''}">${SEDE_LABEL[dip.sede]||dip.sede}</span>
-          ${riposo?' · <em>Riposo</em>':''}
-          ${orari?' · '+orari:''}
+          ${riposo ? ' · Riposo' : ''}
+          ${badges.length ? ` · ${badges.length} badge` : ''}
         </div>
       </div>
       <span class="emp-status">${statusEmoji}</span>
@@ -1627,8 +1470,7 @@ async function refreshAdmin() {
   document.getElementById('s-presenti').textContent = presenti;
   document.getElementById('s-alert').textContent = getAlertsOggi().length;
   document.getElementById('s-badge').textContent = totalBadge;
-  document.getElementById('lista-dipendenti-oggi').innerHTML =
-    rows || '<p style="color:var(--text-muted);font-size:13px;">Nessun dato</p>';
+  document.getElementById('lista-dipendenti-oggi').innerHTML = html || '<p style="color:var(--text-muted);font-size:13px;">Nessun dato</p>';
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1905,180 +1747,168 @@ function toast(msg) {
 
 
 // ═══════════════════════════════════════════════════════
-// BADGE GPS — verifica posizione prima di timbrare
+// QR SCANNER — input[capture] + jsQR multi-scale (iOS/Android)
 // ═══════════════════════════════════════════════════════
 
-// Coordinate sedi (lat, lng, raggio in metri)
-const SEDI_GPS = {
-  OTT: { lat: 40.859595, lng: 14.473376, raggio: 200, label: 'Ottaviano' },
-  SAN: { lat: 40.949542, lng: 14.253266, raggio: 200, label: "Sant'Arpino" },
-  VIL: { lat: 40.918636, lng: 14.184529, raggio: 200, label: 'Villaricca' },
-  GIU: { lat: 40.943509, lng: 14.216876, raggio: 200, label: 'Giugliano' },
-  ZEU: { lat: 40.944321, lng: 14.221122, raggio: 200, label: 'Deposito Zeus' },
+const QR_SEDE_MAP = {
+  'OTT': ['ottaviano','ott','sede_ottaviano','badge_ott'],
+  'SAN': ["santarpino","sant'arpino","sarpino","arpino","santarpino","sede_santarpino","badge_san","san"],
+  'VIL': ['villaricca','vil','sede_villaricca','badge_vil'],
+  'GIU': ['giugliano','giu','sede_giugliano','badge_giu'],
 };
 
-// Calcola distanza in metri tra due coordinate (formula Haversine)
-function distanzaMetri(lat1, lng1, lat2, lng2) {
-  const R = 6371000;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
-    Math.sin(dLng/2) * Math.sin(dLng/2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-}
-
-// Trova la sede più vicina alla posizione del dipendente
-function sedePiuVicina(lat, lng) {
-  let best = null, bestDist = Infinity;
-  for (const [id, sede] of Object.entries(SEDI_GPS)) {
-    const d = distanzaMetri(lat, lng, sede.lat, sede.lng);
-    if (d < bestDist) { bestDist = d; best = { id, sede, distanza: Math.round(d) }; }
+function matchSedeDaQR(testo) {
+  const t = testo.toLowerCase().replace(/[\s''']/g,'');
+  for (const [sede, kws] of Object.entries(QR_SEDE_MAP)) {
+    if (kws.some(k => t.includes(k.replace(/[\s''']/g,'')))) return sede;
   }
-  return best;
+  return null;
 }
 
-function avviaGPS() {
+function avviaScanner() {
   const val = getData('dipendente_corrente');
   if (!val) { toast('⚠️ Seleziona prima il tuo nome'); return; }
+  const inp = document.getElementById('qr-input-file');
+  inp.value = '';
+  inp.click();
+}
 
-  if (!navigator.geolocation) {
-    _qrShow('error');
-    document.getElementById('qr-error-msg').textContent =
-      '❌ GPS non disponibile su questo dispositivo.';
-    return;
-  }
+// Decodifica su canvas a dimensioni specifiche
+function _decodeAt(ctx, canvas, img, w, h) {
+  canvas.width = w; canvas.height = h;
+  ctx.drawImage(img, 0, 0, w, h);
+  try {
+    const d = ctx.getImageData(0, 0, w, h);
+    return jsQR(d.data, w, h, { inversionAttempts: 'attemptBoth' });
+  } catch(e) { return null; }
+}
+
+// Decodifica ritagliando una porzione centrale dell'immagine
+function _decodeCrop(ctx, canvas, img, cx, cy, size) {
+  const sw = Math.min(size, img.width);
+  const sh = Math.min(size, img.height);
+  const sx = Math.max(0, cx - sw/2);
+  const sy = Math.max(0, cy - sh/2);
+  const outSz = 600;
+  canvas.width = outSz; canvas.height = outSz;
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outSz, outSz);
+  try {
+    const d = ctx.getImageData(0, 0, outSz, outSz);
+    return jsQR(d.data, outSz, outSz, { inversionAttempts: 'attemptBoth' });
+  } catch(e) { return null; }
+}
+
+function onQrFileChange(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
 
   _qrShow('scanning');
 
-  // Aggiorna messaggio con countdown e istruzioni
-  let secondi = 0;
-  const scanEl = document.getElementById('qr-scanning');
-  const timerEl = document.createElement('div');
-  timerEl.id = 'gps-timer';
-  timerEl.style.cssText = 'margin-top:14px;font-size:12px;color:var(--text-muted);';
-  if (scanEl) scanEl.appendChild(timerEl);
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      const canvas = document.getElementById('qr-canvas-hidden');
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      let code = null;
 
-  const countdown = setInterval(function() {
-    secondi++;
-    if (!document.getElementById('gps-timer')) { clearInterval(countdown); return; }
-    if (secondi < 10) {
-      timerEl.textContent = 'Attesa segnale GPS… ' + secondi + 's';
-    } else if (secondi < 20) {
-      timerEl.innerHTML = 'Segnale lento… ' + secondi + 's<br><small>Se bloccato: Impostazioni → Safari → Localizzazione → Consenti</small>';
-    } else {
-      clearInterval(countdown);
-      // Fallback: se dopo 20s non risponde, offri timbra senza GPS
-      timerEl.innerHTML = '⏱ GPS non risponde.<br>' +
-        '<button onclick="timbraForzato()" style="margin-top:8px;padding:8px 16px;background:var(--orange);color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">⚠️ Timbra senza verifica GPS</button>';
-    }
-  }, 1000);
-
-  const dip = getDipFull(val);
-
-  navigator.geolocation.getCurrentPosition(
-    function(pos) {
-      clearInterval(countdown);
-      const t = document.getElementById('gps-timer');
-      if (t) t.remove();
-      _onPosizione(pos, dip);
-    },
-    function(err) {
-      clearInterval(countdown);
-      const t = document.getElementById('gps-timer');
-      if (t) t.remove();
-      _qrShow('error');
-      let msg = '❌ GPS non disponibile.\n\n';
-      if (err.code === 1) {
-        msg += 'Permesso negato.\n\n' +
-          '📱 iPhone: Impostazioni → Privacy e sicurezza → Localizzazione → Safari → "Mentre usi l\'app"\n\n' +
-          'Poi ricarica la pagina e riprova.';
-      } else if (err.code === 2) {
-        msg += 'Segnale assente. Vai all\'aperto e riprova.';
-      } else {
-        msg += 'Timeout (codice ' + err.code + '). Riprova all\'aperto.';
+      // Strategia 1 — scala a 800px (ottimale per jsQR)
+      if (!code) {
+        const s = Math.min(1, 800 / Math.max(img.width, img.height));
+        code = _decodeAt(ctx, canvas, img, Math.round(img.width*s), Math.round(img.height*s));
       }
-      document.getElementById('qr-error-msg').textContent = msg;
-    },
-    { enableHighAccuracy: true, timeout: 20000, maximumAge: 30000 }
-  );
+      // Strategia 2 — scala a 1200px
+      if (!code) {
+        const s = Math.min(1, 1200 / Math.max(img.width, img.height));
+        code = _decodeAt(ctx, canvas, img, Math.round(img.width*s), Math.round(img.height*s));
+      }
+      // Strategia 3 — immagine intera (foto bassa risoluzione)
+      if (!code) {
+        code = _decodeAt(ctx, canvas, img, img.width, img.height);
+      }
+      // Strategia 4 — crop centro (l'utente ha messo il QR al centro)
+      if (!code) {
+        code = _decodeCrop(ctx, canvas, img, img.width/2, img.height/2, Math.min(img.width, img.height) * 0.7);
+      }
+      // Strategia 5 — crop centro piccolo (QR molto in centro)
+      if (!code) {
+        code = _decodeCrop(ctx, canvas, img, img.width/2, img.height/2, Math.min(img.width, img.height) * 0.4);
+      }
+      // Strategia 6 — crop terzo superiore (dipendente tiene il telefono alto)
+      if (!code) {
+        code = _decodeCrop(ctx, canvas, img, img.width/2, img.height * 0.35, Math.min(img.width, img.height) * 0.5);
+      }
+      // Strategia 7 — scala molto piccola 400px (per QR molto semplici)
+      if (!code) {
+        const s = Math.min(1, 400 / Math.max(img.width, img.height));
+        code = _decodeAt(ctx, canvas, img, Math.round(img.width*s), Math.round(img.height*s));
+      }
+
+      if (code && code.data) {
+        _onQRFound(code.data);
+      } else {
+        _qrShow('error');
+        document.getElementById('qr-error-msg').textContent =
+          '❌ QR Code non rilevato nella foto.\n\n📌 Consigli:\n• Avvicina di più il telefono al QR\n• Inquadra solo il QR, pochi cm intorno\n• Assicurati che sia ben illuminato\n• Evita riflessi o ombre sul QR\n• Tieni il telefono fermo e parallelo al QR\n\nRiprova!';
+      }
+    };
+    img.onerror = function() {
+      _qrShow('error');
+      document.getElementById('qr-error-msg').textContent = '❌ Impossibile leggere l\'immagine. Riprova.';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
-// Timbra senza GPS (per emergenza o permesso negato)
-function timbraForzato() {
+function _onQRFound(rawText) {
   const val = getData('dipendente_corrente');
-  if (!val) return;
+  if (!val) { resetScanner(); return; }
   const dip = getDipFull(val);
-  const sedeId = dip.sede === 'MULTI' ? 'MULTI' : dip.sede;
-  const sedeLabel = SEDI_GPS[sedeId] ? SEDI_GPS[sedeId].label : (SEDE_LABEL[sedeId] || sedeId);
-  _eseguiBadge(dip, sedeId, sedeLabel, null, null);
-}
+  const sedeQR = matchSedeDaQR(rawText);
 
-function _onPosizione(pos, dip) {
-  const lat = pos.coords.latitude;
-  const lng = pos.coords.longitude;
-  const accuracy = Math.round(pos.coords.accuracy);
-
-  const vicina = sedePiuVicina(lat, lng);
-  const sedeDip = dip.sede; // OTT, SAN, VIL, GIU, MULTI
-
-  // Controlla se il dipendente è in una sede valida
-  let sedeValida = null;
-
-  if (sedeDip === 'MULTI') {
-    // Itinerante: può timbrare in qualsiasi sede entro raggio
-    if (vicina && vicina.distanza <= vicina.sede.raggio) {
-      sedeValida = vicina.id;
-    }
-  } else {
-    // Dipendente fisso: deve essere nella sua sede o nel deposito Zeus
-    const sedePropria = SEDI_GPS[sedeDip];
-    const distSedePropria = sedePropria ? distanzaMetri(lat, lng, sedePropria.lat, sedePropria.lng) : Infinity;
-    const distZeus = distanzaMetri(lat, lng, SEDI_GPS.ZEU.lat, SEDI_GPS.ZEU.lng);
-
-    if (distSedePropria <= (sedePropria ? sedePropria.raggio : 0)) {
-      sedeValida = sedeDip;
-    } else if (distZeus <= SEDI_GPS.ZEU.raggio) {
-      sedeValida = 'ZEU';
-    }
+  if (!sedeQR) {
+    // QR non riconosciuto come sede — accetta comunque, usa sede del dipendente
+    _eseguiBadge(dip, dip.sede, rawText, true);
+    return;
   }
 
-  if (sedeValida) {
-    const sedeLabel = SEDI_GPS[sedeValida] ? SEDI_GPS[sedeValida].label : sedeValida;
-    _eseguiBadge(dip, sedeValida, sedeLabel, vicina.distanza, accuracy);
-  } else {
-    // Troppo lontano
-    const nomeSedePropria = SEDI_GPS[sedeDip] ? SEDI_GPS[sedeDip].label : sedeDip;
-    const distSedePropria = SEDI_GPS[sedeDip] ?
-      Math.round(distanzaMetri(lat, lng, SEDI_GPS[sedeDip].lat, SEDI_GPS[sedeDip].lng)) : '?';
+  if (dip.sede !== 'MULTI' && dip.sede !== sedeQR) {
     _qrShow('error');
     document.getElementById('qr-error-msg').textContent =
-      '🚫 Non sei in sede.\n\n' +
-      '📍 Distanza da ' + nomeSedePropria + ': ' + distSedePropria + ' m\n' +
-      '📡 Precisione GPS: ±' + accuracy + ' m\n\n' +
-      'Devi essere entro 200 m dalla sede per timbrare.\n' +
-      'Se sei in sede e non funziona, vai all\'aperto e riprova.';
+      '⚠️ Sei registrato per ' + (SEDE_LABEL[dip.sede]||dip.sede) +
+      ',\nma questo QR è della sede ' + (SEDE_LABEL[sedeQR]||sedeQR) +
+      '.\n\nContatta l\'admin se è un errore.';
+    return;
   }
+
+  _eseguiBadge(dip, sedeQR, rawText, false);
 }
 
-function _eseguiBadge(dip, sedeId, sedeLabel, distanza, accuracy) {
+function _eseguiBadge(dip, sedeQR, rawText, generico) {
   const key = getBadgeKey(dip.nome.replace(/\s+/g,'_').toLowerCase());
   const badges = getData(key, []);
   const lastBadge = badges[badges.length-1];
   const inSede = lastBadge && lastBadge.tipo === 'entrata';
-  const infoGps = distanza !== null ? ' · 📍' + distanza + 'm' : ' · ⚠️ GPS non verificato';
+  const sedeLabel = SEDE_LABEL[sedeQR] || sedeQR;
+  const extra = generico ? ' (QR generico)' : '';
+
   if (!inSede) {
     badgeEntrata();
-    mostraQROk('Entrata registrata ✅', dip.nome + ' · ' + sedeLabel + infoGps);
+    mostraQROk('Entrata registrata ✅', dip.nome + ' · ' + sedeLabel + extra);
   } else {
     badgeUscita();
-    mostraQROk('Uscita registrata ✅', dip.nome + ' · ' + sedeLabel + infoGps);
+    mostraQROk('Uscita registrata ✅', dip.nome + ' · ' + sedeLabel + extra);
   }
 }
 
-function avviaScanner() { avviaGPS(); }
-function fermaScanner()  { _qrShow('idle'); }
-function resetScanner()  { _qrShow('idle'); }
+function fermaScanner() { _qrShow('idle'); }
+
+function resetScanner() {
+  _qrShow('idle');
+  const inp = document.getElementById('qr-input-file');
+  if (inp) inp.value = '';
+}
 
 function _qrShow(stato) {
   ['idle','scanning','success','error'].forEach(s => {
@@ -2098,60 +1928,84 @@ function mostraQRError(msg) {
   document.getElementById('qr-error-msg').textContent = msg;
 }
 
-// QR rimosso
-
 // ═══════════════════════════════════════════════════════
-// GOOGLE SHEETS CONFIG FUNCTIONS
+// GENERA QR SEDI (admin) — usa QRCode.js
 // ═══════════════════════════════════════════════════════
+function generaQRSedi() {
+  const sedi = [
+    { id:'OTT', label:'Ottaviano',    code:'SEDE_OTTAVIANO' },
+    { id:'SAN', label:"Sant'Arpino",  code:'SEDE_SANTARPINO' },
+    { id:'VIL', label:'Villaricca',   code:'SEDE_VILLARICCA' },
+    { id:'GIU', label:'Giugliano',    code:'SEDE_GIUGLIANO' },
+  ];
 
-function initSheetConfig() {
-  const url = getData('sheet_url','');
-  const inp = document.getElementById('sheet-url-input');
-  if (inp && url) inp.value = url;
-  const ta = document.getElementById('apps-script-code');
-  if (ta) ta.value = APPS_SCRIPT_CODE;
-}
+  const area = document.getElementById('qr-gen-area');
+  if (!area) return;
+  area.innerHTML = '';
 
-function salvaSheetUrl() {
-  const url = (document.getElementById('sheet-url-input').value||'').trim();
-  if (!url) { toast("Incolla prima l'URL"); return; }
-  setData('sheet_url', url);
-  document.getElementById('sheet-status').innerHTML =
-    '<span style="color:var(--green);">✅ Salvato. Premi Test per verificare.</span>';
-  toast('✅ URL salvato!');
-}
-
-async function testSheetUrl() {
-  const url = getData('sheet_url','');
-  const st = document.getElementById('sheet-status');
-  if (!url) {
-    st.innerHTML = '<span style="color:var(--red);">❌ Prima incolla e salva l\'URL</span>';
+  if (typeof QRCode === 'undefined') {
+    area.innerHTML = '<p style="color:var(--red);font-size:13px;">❌ Libreria QR non caricata. Connettiti a internet e ricarica la pagina.</p>';
     return;
   }
-  // Valida formato URL
-  if (!url.includes('script.google.com') || !url.includes('/exec')) {
-    st.innerHTML = '<span style="color:var(--red);">❌ URL non valido — deve essere un URL Apps Script che finisce con /exec</span>';
-    return;
-  }
-  st.innerHTML = '<span style="color:var(--text-muted);">⏳ Verifica in corso…</span>';
-  try {
-    // no-cors: se Google risponde (anche opaque) l'URL è raggiungibile
-    const r = await fetch(url + '?action=ping', { mode: 'no-cors' });
-    // r.type === 'opaque' significa che Google ha risposto (CORS bloccato lato browser, ma il server funziona)
-    st.innerHTML = '<span style="color:var(--green);">✅ URL raggiungibile! Google Apps Script attivo.<br>'
-      + '<small style="font-weight:400;">I badge verranno salvati sul foglio automaticamente.</small></span>';
-  } catch(e) {
-    st.innerHTML = '<span style="color:var(--red);">❌ URL non raggiungibile — controlla la connessione</span>';
-  }
+
+  sedi.forEach(s => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'margin-bottom:14px;padding:14px;background:var(--dark3);border-radius:10px;text-align:center;';
+
+    const qrDiv = document.createElement('div');
+    qrDiv.id = 'qr-gen-' + s.id;
+    qrDiv.style.cssText = 'display:inline-block;background:#fff;padding:10px;border-radius:8px;margin:8px 0;';
+
+    wrap.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:6px;">🏠 ${s.label}</div>`;
+    wrap.appendChild(qrDiv);
+    wrap.innerHTML += `<div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${s.code}</div>
+      <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="stampaQR('${s.label}','${s.code}')">🖨 Stampa</button>`;
+
+    // Re-aggiungi qrDiv perché innerHTML lo ha rimosso
+    const labelDiv = wrap.querySelector('[style*="font-weight:600"]');
+    labelDiv.after(qrDiv);
+
+    area.appendChild(wrap);
+
+    // Genera QR
+    try {
+      new QRCode(qrDiv, {
+        text: s.code,
+        width: 160, height: 160,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    } catch(e) {
+      qrDiv.textContent = s.code;
+    }
+  });
+
+  toast('✅ QR generati! Premi Stampa su ciascuno.');
 }
 
-function copiaAppsScript() {
-  const ta = document.getElementById('apps-script-code');
-  if (!ta) return;
-  navigator.clipboard.writeText(ta.value).then(
-    () => toast('✅ Codice copiato! Incollalo su script.google.com'),
-    () => { ta.select(); document.execCommand('copy'); toast('✅ Copiato!'); }
-  );
+function stampaQR(label, code) {
+  const size = 280;
+  const url = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(code)}&ecc=H&margin=10`;
+  const win = window.open('', '_blank', 'width=420,height=560');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+  <title>QR ${label}</title>
+  <style>
+    body{font-family:sans-serif;text-align:center;padding:30px;background:#fff;}
+    h1{font-size:22px;margin-bottom:4px;}
+    h2{font-size:15px;color:#555;margin-bottom:24px;font-weight:400;}
+    img{display:block;margin:0 auto 16px;}
+    p{font-size:12px;color:#888;}
+    @media print{body{padding:10px;}}
+  </style></head><body>
+  <h1>🏠 Arredamenti Cinquegrana</h1>
+  <h2>Badge QR — ${label}</h2>
+  <img src="${url}" width="${size}" height="${size}" alt="QR ${label}">
+  <p>Scansiona con l'app Badging per timbrare</p>
+  <p style="font-size:10px;color:#bbb;margin-top:4px;">${code}</p>
+  <script>window.onload=()=>{setTimeout(()=>window.print(),600);}<\/script>
+  </body></html>`);
+  win.document.close();
 }
 
 // ═══════════════════════════════════════════════════════
@@ -2159,7 +2013,6 @@ function copiaAppsScript() {
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   initDipendente();
-  initSheetConfig();
 });
 
 </script>
