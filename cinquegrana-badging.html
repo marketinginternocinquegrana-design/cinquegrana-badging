@@ -508,58 +508,7 @@ table.rep tr:hover td { background: rgba(200,169,110,0.04); }
 
 .divider { border: none; border-top: 1px solid rgba(255,255,255,0.07); margin: 14px 0; }
 
-/* ═══ QR AREA ═══ */
-.qr-info {
-  text-align: center;
-  padding: 20px;
-  border: 2px dashed rgba(200,169,110,0.2);
-  border-radius: 10px;
-}
-.qr-icon { font-size: 48px; margin-bottom: 8px; }
-.qr-note { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
-
-/* ═══ QR VIDEO ═══ */
-#qr-video-el {
-  width: 100%;
-  max-height: 260px;
-  object-fit: cover;
-  border-radius: 10px;
-  display: block;
-  background: #000;
-}
-.qr-frame-wrap {
-  position: relative;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #000;
-}
-.qr-aim {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%,-50%);
-  width: 180px; height: 180px;
-  border: 3px solid var(--gold);
-  border-radius: 10px;
-  box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
-  pointer-events: none;
-}
-.qr-aim::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  animation: scanline 2s linear infinite;
-}
-@keyframes scanline {
-  0%   { top: 0;    opacity:1; }
-  50%  { top: 100%; opacity:0.4; }
-  100% { top: 0;    opacity:1; }
-}
-.qr-cam-label {
-  text-align:center; font-size:12px; color:var(--text-muted); margin-top:8px;
-}
-#qr-canvas-hidden { position:fixed; left:-9999px; top:-9999px; }
+/* QR rimosso */
 
 /* ═══ SCROLL AREA ═══ */
 .scroll-area { max-height: 320px; overflow-y: auto; }
@@ -593,10 +542,7 @@ input[type=password] { letter-spacing: 3px; }
 .pin-ok    { background: rgba(82,183,136,0.12); border-color: rgba(82,183,136,0.3); color: var(--green); font-size:26px; }
 
 </style>
-<!-- html5-qrcode: libreria QR testata su iOS Safari, Android Chrome -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<!-- QRCode.js per generare QR in admin -->
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
 </head>
 <body>
 
@@ -933,7 +879,8 @@ input[type=password] { letter-spacing: 3px; }
         <div class="card-title">🔗 Google Sheets — presenze condivise</div>
         <p style="font-size:12px;color:var(--text-muted);line-height:1.6;margin-bottom:12px;">
           Collega un Google Sheet per vedere i badge di <strong>tutti i dispositivi</strong> in tempo reale.<br>
-          Senza collegamento, ogni telefono salva solo i propri badge.
+          Senza collegamento, ogni telefono salva solo i propri badge.<br>
+          <small style="color:var(--gold);">⚠️ Il tuo Apps Script deve restituire JSONP (vedi codice aggiornato sotto).</small>
         </p>
         <input type="text" id="sheet-url-input" placeholder="Incolla qui l'URL del tuo Apps Script…" style="margin-bottom:8px;font-size:12px;">
         <div style="display:flex;gap:8px;margin-bottom:10px;">
@@ -953,7 +900,76 @@ input[type=password] { letter-spacing: 3px; }
         </div>
         <textarea id="apps-script-code" readonly
           style="width:100%;height:140px;background:var(--dark3);border:1px solid rgba(200,169,110,0.2);border-radius:8px;color:var(--text-muted);font-size:10px;font-family:monospace;padding:8px;resize:none;line-height:1.4;"
-        ></textarea>
+        >// ══════════════════════════════════════════
+// INCOLLA QUESTO CODICE IN GOOGLE APPS SCRIPT
+// File > Nuovo progetto > incolla > Distribuisci > App web
+// Esegui come: Me | Accesso: Chiunque
+// ══════════════════════════════════════════
+const SHEET_NAME = 'Badge';
+
+function doGet(e) {
+  const a = (e.parameter.action || '');
+  const cb = e.parameter.callback || ''; // JSONP callback
+
+  let result;
+  if (a === 'ping') {
+    result = { sheet: SpreadsheetApp.getActiveSpreadsheet().getName() };
+  } else if (a === 'presenze') {
+    result = { data: getPresenze(e.parameter.data || today()) };
+  } else {
+    result = { msg: 'Cinquegrana Badging API OK' };
+  }
+
+  // JSONP: necessario per leggere i dati dal browser senza CORS
+  const output = cb
+    ? cb + '(' + JSON.stringify(result) + ')'
+    : JSON.stringify(result);
+
+  return ContentService
+    .createTextOutput(output)
+    .setMimeType(cb ? ContentService.MimeType.JAVASCRIPT : ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    const p = JSON.parse(e.postData.contents);
+    if (p.action === 'badge') { salvaBadge(p); return jsonResp({ saved: true }); }
+    return jsonResp({ msg: 'unknown' });
+  } catch(err) { return jsonResp({ error: err.message }); }
+}
+
+function jsonResp(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function salvaBadge(p) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sh = ss.getSheetByName(SHEET_NAME);
+  if (!sh) {
+    sh = ss.insertSheet(SHEET_NAME);
+    sh.appendRow(['Data','Nome','Sede','Tipo','Ore','Ritardo','Anticipo','Timestamp']);
+    sh.setFrozenRows(1);
+  }
+  sh.appendRow([p.data||today(), p.nome, p.sede, p.tipo, p.ore, p.ritardo||0, p.anticipo||0, p.ts||Date.now()]);
+}
+
+function getPresenze(data) {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+  if (!sh) return [];
+  const rows = sh.getDataRange().getValues();
+  const out = [];
+  for (let i = 1; i < rows.length; i++) {
+    const [d, nome, sede, tipo, ore, ritardo, anticipo, ts] = rows[i];
+    if (String(d).trim() === String(data).trim())
+      out.push({ nome, sede, tipo, ore, ritardo, anticipo, ts });
+  }
+  return out;
+}
+
+function today() {
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}</textarea>
         <button class="btn btn-outline" style="margin-top:8px;font-size:12px;" onclick="copiaAppsScript()">📋 Copia codice</button>
       </div>
 
@@ -968,21 +984,6 @@ input[type=password] { letter-spacing: 3px; }
         <input type="text" id="sblocca-nome" placeholder="Nome dipendente" style="margin-bottom:8px;">
         <button class="btn btn-outline" onclick="sbloccaDispositivo()">Sblocca</button>
       </div>
-
-      <div class="card">
-        <div class="card-title">📱 Genera QR Code sedi</div>
-        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Genera e stampa i QR da affiggere in ogni sede. I dipendenti li scansionano per timbrare.</p>
-        <div id="qr-gen-area"></div>
-        <button class="btn btn-gold" style="margin-top:10px;" onclick="generaQRSedi()">🖨 Genera QR da stampare</button>
-      </div>
-
-
-      <div class="card">
-        <div class="card-title">🧪 Genera dati demo</div>
-        <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">Crea 30 giorni di badge fittizi per testare il report merito.</p>
-        <button class="btn btn-blue" onclick="generaDemo()">Genera dati demo</button>
-      </div>
-    </div>
 
   </div>
 </div>
@@ -1070,21 +1071,54 @@ function getAllKeys() {
 // ═══════════════════════════════════════════════════════
 // GOOGLE SHEETS API
 // ═══════════════════════════════════════════════════════
+// apiCall: POST usa no-cors (solo scrittura), GET usa JSONP per leggere i dati
 async function apiCall(params={}, body=null) {
   const base = getData('sheet_url','');
   if (!base) return null;
-  try {
-    // Sia GET che POST: no-cors (Google riceve tutto, noi non leggiamo la risposta — è normale per Apps Script)
-    const parts = [];
-    for (const k in (params||{})) parts.push(encodeURIComponent(k)+'='+encodeURIComponent(params[k]));
-    if (body) {
-      await fetch(base, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(body) });
-    } else {
-      await fetch(base + (parts.length ? '?'+parts.join('&') : ''), { mode:'no-cors' });
-    }
-    return { ok: true };
-  } catch(e) { return null; }
+
+  if (body) {
+    // POST: salva badge — no-cors, non serve risposta
+    try {
+      await fetch(base, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(body)
+      });
+      return { ok: true };
+    } catch(e) { return null; }
+  } else {
+    // GET: legge presenze — usa JSONP (unico modo con Apps Script + no autenticazione)
+    return new Promise((resolve) => {
+      const cb = 'cb_' + Date.now();
+      const parts = [];
+      for (const k in (params||{})) parts.push(encodeURIComponent(k)+'='+encodeURIComponent(params[k]));
+      parts.push('callback=' + cb);
+
+      const timeout = setTimeout(() => {
+        delete window[cb];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        resolve(null);
+      }, 8000);
+
+      window[cb] = function(data) {
+        clearTimeout(timeout);
+        delete window[cb];
+        if (script.parentNode) script.parentNode.removeChild(script);
+        resolve(data);
+      };
+
+      const script = document.createElement('script');
+      script.src = base + '?' + parts.join('&');
+      script.onerror = () => { clearTimeout(timeout); delete window[cb]; resolve(null); };
+      document.head.appendChild(script);
+    });
+  }
 }
+
+// Aggiorna refreshAdmin per usare correttamente JSONP
+// NB: Apps Script doGet deve supportare callback JSONP:
+// return ContentService.createTextOutput(e.parameter.callback + '(' + JSON.stringify(output) + ')').setMimeType(ContentService.MimeType.JAVASCRIPT);
 
 // ═══════════════════════════════════════════════════════
 // OROLOGIO
@@ -1535,7 +1569,7 @@ async function refreshAdmin() {
     if (el) el.innerHTML = '<p style="color:var(--text-muted);font-size:13px;">⏳ Caricamento da Sheets…</p>';
     try {
       const res = await apiCall({ action:'presenze', data: getTodayKey() });
-      if (res && res.ok && Array.isArray(res.data) && res.data.length > 0) {
+      if (res && Array.isArray(res.data) && res.data.length > 0) {
         // Svuota e ricostruisci da Sheets (dati di tutti i dispositivi)
         badgeMap = {};
         res.data.forEach(row => {
@@ -2064,159 +2098,11 @@ function mostraQRError(msg) {
   document.getElementById('qr-error-msg').textContent = msg;
 }
 
-// ═══════════════════════════════════════════════════════
-// GENERA QR SEDI (admin) — usa QRCode.js
-// ═══════════════════════════════════════════════════════
-function generaQRSedi() {
-  const sedi = [
-    { id:'OTT', label:'Ottaviano',    code:'SEDE_OTTAVIANO' },
-    { id:'SAN', label:"Sant'Arpino",  code:'SEDE_SANTARPINO' },
-    { id:'VIL', label:'Villaricca',   code:'SEDE_VILLARICCA' },
-    { id:'GIU', label:'Giugliano',    code:'SEDE_GIUGLIANO' },
-  ];
-
-  const area = document.getElementById('qr-gen-area');
-  if (!area) return;
-  area.innerHTML = '';
-
-  if (typeof QRCode === 'undefined') {
-    area.innerHTML = '<p style="color:var(--red);font-size:13px;">❌ Libreria QR non caricata. Connettiti a internet e ricarica la pagina.</p>';
-    return;
-  }
-
-  sedi.forEach(s => {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'margin-bottom:14px;padding:14px;background:var(--dark3);border-radius:10px;text-align:center;';
-
-    const qrDiv = document.createElement('div');
-    qrDiv.id = 'qr-gen-' + s.id;
-    qrDiv.style.cssText = 'display:inline-block;background:#fff;padding:10px;border-radius:8px;margin:8px 0;';
-
-    wrap.innerHTML = `<div style="font-size:13px;font-weight:600;color:var(--gold);margin-bottom:6px;">🏠 ${s.label}</div>`;
-    wrap.appendChild(qrDiv);
-    wrap.innerHTML += `<div style="font-size:10px;color:var(--text-muted);margin-top:4px;">${s.code}</div>
-      <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="stampaQR('${s.label}','${s.code}')">🖨 Stampa</button>`;
-
-    // Re-aggiungi qrDiv perché innerHTML lo ha rimosso
-    const labelDiv = wrap.querySelector('[style*="font-weight:600"]');
-    labelDiv.after(qrDiv);
-
-    area.appendChild(wrap);
-
-    // Genera QR
-    try {
-      new QRCode(qrDiv, {
-        text: s.code,
-        width: 160, height: 160,
-        colorDark: '#000000',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.H
-      });
-    } catch(e) {
-      qrDiv.textContent = s.code;
-    }
-  });
-
-  toast('✅ QR generati! Premi Stampa su ciascuno.');
-}
-
-function stampaQR(label, code) {
-  const size = 400;
-  const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size +
-    '&data=' + encodeURIComponent(code) + '&ecc=H&margin=10';
-
-  const html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>QR ' + label + '</title>' +
-    '<style>' +
-    'body{font-family:Georgia,serif;text-align:center;padding:40px 20px;background:#fff;color:#222;}' +
-    'h1{font-size:24px;margin:0 0 6px;}' +
-    'h2{font-size:16px;color:#555;margin:0 0 28px;font-weight:400;}' +
-    '.qr-wrap{display:inline-block;padding:16px;border:2px solid #C8A96E;border-radius:12px;margin-bottom:20px;}' +
-    'p{font-size:13px;color:#777;margin:6px 0;}' +
-    '.code{font-family:monospace;font-size:11px;color:#aaa;margin-top:10px;}' +
-    '@media print{body{padding:20px;}button{display:none!important;}}' +
-    '</style></head><body>' +
-    '<h1>Arredamenti Cinquegrana</h1>' +
-    '<h2>Badge QR — ' + label + '</h2>' +
-    '<div class="qr-wrap"><img src="' + qrUrl + '" width="' + size + '" height="' + size + '"></div>' +
-    '<p>Scansiona con l\'app Badging per timbrare la presenza</p>' +
-    '<p class="code">' + code + '</p>' +
-    '<br><button onclick="window.print()" style="margin-top:16px;padding:12px 28px;font-size:15px;background:#C8A96E;color:#111;border:none;border-radius:8px;cursor:pointer;font-weight:700;">Stampa</button>' +
-    '</body></html>';
-
-  const blob = new Blob([html], { type: 'text/html' });
-  const blobUrl = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = blobUrl;
-  a.target = '_blank';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(function() { URL.revokeObjectURL(blobUrl); }, 10000);
-}
+// QR rimosso
 
 // ═══════════════════════════════════════════════════════
 // GOOGLE SHEETS CONFIG FUNCTIONS
 // ═══════════════════════════════════════════════════════
-const APPS_SCRIPT_CODE = `const SHEET_NAME = 'Badge';
-
-function doGet(e) {
-  const a = (e.parameter.action||'');
-  const cb = e.parameter.callback||'';
-  if (a==='ping') return ok({sheet:SpreadsheetApp.getActiveSpreadsheet().getName()}, cb);
-  if (a==='presenze') return ok({data:getPresenze(e.parameter.data||today())}, cb);
-  return ok({msg:'Cinquegrana Badging API OK'}, cb);
-}
-
-function doPost(e) {
-  try {
-    const p = JSON.parse(e.postData.contents);
-    if (p.action==='badge') { salvaBadge(p); return ok({saved:true}); }
-    return ok({msg:'unknown'});
-  } catch(err) { return err_(err.message); }
-}
-
-function salvaBadge(p) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sh = ss.getSheetByName(SHEET_NAME);
-  if (!sh) {
-    sh = ss.insertSheet(SHEET_NAME);
-    sh.appendRow(['Data','Nome','Sede','Tipo','Ore','Ritardo','Anticipo','Timestamp']);
-    sh.setFrozenRows(1);
-  }
-  sh.appendRow([p.data||today(),p.nome,p.sede,p.tipo,p.ore,p.ritardo||0,p.anticipo||0,p.ts||Date.now()]);
-}
-
-function getPresenze(data) {
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
-  if (!sh) return [];
-  const rows = sh.getDataRange().getValues();
-  const out = [];
-  for (let i=1;i<rows.length;i++) {
-    const [d,nome,sede,tipo,ore,ritardo,anticipo,ts] = rows[i];
-    if (String(d).trim()===String(data).trim())
-      out.push({nome,sede,tipo,ore,ritardo,anticipo,ts});
-  }
-  return out;
-}
-
-function today() {
-  return Utilities.formatDate(new Date(),Session.getScriptTimeZone(),'yyyy-MM-dd');
-}
-function doGet_handleAction(a, e) {
-  if (a==='ping') return {ok:true, sheet:SpreadsheetApp.getActiveSpreadsheet().getName()};
-  if (a==='presenze') return {ok:true, data:getPresenze(e.parameter.data||today())};
-  return {ok:true, msg:'Cinquegrana Badging OK'};
-}
-function ok(d, cb) {
-  const json = JSON.stringify({ok:true,...d});
-  if (cb) return ContentService.createTextOutput(cb+'('+json+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
-  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
-}
-function err_(m, cb) {
-  const json = JSON.stringify({ok:false,error:m});
-  if (cb) return ContentService.createTextOutput(cb+'('+json+')').setMimeType(ContentService.MimeType.JAVASCRIPT);
-  return ContentService.createTextOutput(json).setMimeType(ContentService.MimeType.JSON);
-}`;
 
 function initSheetConfig() {
   const url = getData('sheet_url','');
